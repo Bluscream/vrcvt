@@ -147,7 +147,7 @@ class VRCTestRunner:
         c_sample = sandbox_prefix / "pfx/drive_c/vrcvt_sample.mp4"
         c_result_json = sandbox_prefix / "pfx/drive_c/vrcvt_result.json"
 
-        try:
+        try: # DO NOT EVER TRY BYPASSING DIRECTLY GETTING STREAMS FROM URL, THIS NEEDS TO BE FIXED RATHER THAN WORKED AROUND
             c_wmf.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(self.wmf_exe, c_wmf)
             if Config.SAMPLE_MP4.is_file():
