@@ -341,7 +341,10 @@ def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
             print(f"{COLOR_RED}[!] Failed to launch VRChat: {e}{COLOR_RESET}")
 
 def run_matrix_test(custom_url=None, try_launch=False):
-    """Run diagnostic matrix tests across Proton versions and configuration flags."""
+    """Run diagnostic matrix tests across Proton versions and configuration flags with high-precision timing."""
+    suite_start_t = time.time()
+    from datetime import datetime
+
     check_and_unlock_h264()
     proton_list = find_proton_tools()
     prefix_dir = find_vrchat_prefix()
@@ -358,9 +361,11 @@ def run_matrix_test(custom_url=None, try_launch=False):
         except Exception:
             pass
 
+    now_str = datetime.now().strftime("[%H:%M:%S]")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN} VRCVideoTester (vrcvt) - Full Diagnostic Matrix & Compatibility Benchmark{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
+    print(f" {now_str} Benchmark Start Time  : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f" Discovered Proton Tools : {len(proton_list)}")
     print(f" Target VRChat Prefix    : {prefix_dir}")
     print(f" WMF Harness Binary      : {wmf_exe}")
@@ -389,7 +394,9 @@ def run_matrix_test(custom_url=None, try_launch=False):
     results = []
 
     for p_name, p_dir, p_bin in proton_list:
-        print(f"{COLOR_BOLD}-> Testing Compatibility Tool: {COLOR_YELLOW}{p_name}{COLOR_RESET}")
+        p_start_t = time.time()
+        p_now = datetime.now().strftime("[%H:%M:%S]")
+        print(f"{p_now} {COLOR_BOLD}-> Testing Compatibility Tool: {COLOR_YELLOW}{p_name}{COLOR_RESET}")
         
         for url_label, raw_url in urls_to_test.items():
             url_target = "C:\\sample.mp4" if raw_url == "ASSET_LOCAL" else raw_url
@@ -403,29 +410,40 @@ def run_matrix_test(custom_url=None, try_launch=False):
                 test_result["env_label"] = env_label
                 test_result["env_vars"] = env_vars
                 test_result["ytdlp_ms"] = ytdlp_ms
+                test_result["wmf_ms"] = test_result["elapsed_ms"]
+                test_result["total_subtest_ms"] = ytdlp_ms + test_result["elapsed_ms"]
                 test_result["ytdlp_err"] = ytdlp_err
                 test_result["ssl_bypass_used"] = ssl_bypass_used
                 results.append(test_result)
 
+        p_elapsed_sec = time.time() - p_start_t
+        print(f"    {COLOR_GRAY}[✓ Finished {p_name} in {p_elapsed_sec:.1f}s]{COLOR_RESET}")
+
+    suite_elapsed_sec = time.time() - suite_start_t
+    mins = int(suite_elapsed_sec // 60)
+    secs = suite_elapsed_sec % 60
+
     # Print Summary Matrix Table
     print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
-    print(f"{COLOR_BOLD}{COLOR_CYAN} DIAGNOSTIC MATRIX SUMMARY RESULTS{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN} DIAGNOSTIC MATRIX SUMMARY RESULTS (Total Runtime: {mins}m {secs:.1f}s / {suite_elapsed_sec:.1f}s){COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
-    print(f"{'PROTON TOOL':<22} | {'STREAM TYPE':<16} | {'ENV CONFIG':<18} | {'STATUS':<8} | {'TIME(ms)':<8} | {'HRESULT':<10} | {'PRIMARY SOLUTION'}")
-    print("-" * 115)
+    print(f"{'PROTON TOOL':<22} | {'STREAM TYPE':<16} | {'ENV CONFIG':<18} | {'STATUS':<8} | {'WMF(ms)':<8} | {'YTDLP(ms)':<9} | {'PRIMARY SOLUTION'}")
+    print("-" * 120)
 
     for r in results:
         status_str = f"{COLOR_GREEN}PASS{COLOR_RESET}" if r["success"] else f"{COLOR_RED}FAIL{COLOR_RESET}"
-        time_str = f"{r['elapsed_ms']:.0f}ms"
-        hres_str = r.get("hresult", "N/A")
+        wmf_time_str = f"{r['wmf_ms']:.0f}ms"
+        ytdlp_time_str = f"{r['ytdlp_ms']:.0f}ms"
         sol_str = r["solution"][:40]
 
         if r.get("ssl_bypass_used"):
             sol_str = f"[SSL Fix: --no-check-certificates] {sol_str}"
 
-        print(f"{r['proton_name'][:22]:<22} | {r['url_label'][:16]:<16} | {r['env_label'][:18]:<18} | {status_str:<17} | {time_str:<8} | {hres_str:<10} | {sol_str}")
+        print(f"{r['proton_name'][:22]:<22} | {r['url_label'][:16]:<16} | {r['env_label'][:18]:<18} | {status_str:<17} | {wmf_time_str:<8} | {ytdlp_time_str:<9} | {sol_str}")
 
-    print("-" * 115)
+    print("-" * 120)
+    print(f"{COLOR_BOLD}Overall Suite Execution Time: {mins} minutes {secs:.1f} seconds ({suite_elapsed_sec:.1f} seconds total){COLOR_RESET}")
+    print()
 
     # Dynamic Ranking of Combinations (Best to Worst by Pass Count & Timing)
     combo_stats = defaultdict(lambda: {"pass_count": 0, "total_tests": 0, "total_ms": 0.0, "env_vars": {}, "env_label": "", "proton_name": ""})
