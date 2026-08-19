@@ -26,7 +26,7 @@ class Config:
         "YouTube Music": "https://music.youtube.com/watch?v=dQw4w9WgXcQ",
         "VRCDN RTSP": "rtspt://stream.vrcdn.live/live/wlk",
         "Eurofurence HLS": "https://stream.eurofurence.org/hls/test_hd.m3u8?streamkey=becoeZKyrxtPUDFVbsc8xaJoJ9B80e2J",
-        "HTTPS Direct MP4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+        "HTTPS Direct MP4": "https://media.w3.org/2010/05/sintel/trailer.mp4"
     }
 
     # VRChat yt-dlp Standard Parameters

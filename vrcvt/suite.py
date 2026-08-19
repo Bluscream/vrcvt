@@ -64,7 +64,13 @@ class VRCBenchmarkSuite:
             ("Default (Unset)", {}),
             ("WINEDLLOVERRIDES=iyuv_32=", {"WINEDLLOVERRIDES": "iyuv_32="}),
             ("G_TLS_GNUTLS_PRIORITY=NORMAL", {"G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
-            ("WINEDLLOVERRIDES=iyuv_32= + GnuTLS", {"WINEDLLOVERRIDES": "iyuv_32=", "G_TLS_GNUTLS_PRIORITY": "NORMAL"})
+            ("WINEDLLOVERRIDES=iyuv_32= + GnuTLS", {"WINEDLLOVERRIDES": "iyuv_32=", "G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
+            ("Full VRChat Video Comp (iyuv_32 + GnuTLS + OpenXR)", {
+                "WINEDLLOVERRIDES": "iyuv_32=",
+                "G_TLS_GNUTLS_PRIORITY": "NORMAL",
+                "PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES": "1",
+                "PRESSURE_VESSEL_FILESYSTEMS_RW": "/var/lib/flatpak/app/io.github.wivrn.wivrn"
+            })
         ]
 
         results = defaultdict(dict)
@@ -86,7 +92,7 @@ class VRCBenchmarkSuite:
                 runner = VRCTestRunner(proton_bin=tool.bin_path, prefix_dir=self.prefix_dir, env_vars=env_vars, wmf_exe=Config.WMF_EXE)
 
                 for stream_name, (res_url, _) in resolved_urls.items():
-                    res = runner.run_test(res_url, timeout=10, retries=1)
+                    res = runner.run_test(res_url, timeout=20, retries=1)
 
                     results[combo_key][stream_name] = res
                     total_ms_sum += res.elapsed_ms

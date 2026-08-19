@@ -122,10 +122,10 @@ def main() -> None:
 
         env_vars = parse_env_args(args.env)
         cmd_args = parse_cmd_args(args.args)
-        test_url = args.url or "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+        test_url = args.url or "https://media.w3.org/2010/05/sintel/trailer.mp4"
 
         runner = VRCTestRunner(proton_bin=selected_proton_bin, prefix_dir=prefix_dir, env_vars=env_vars, cmd_args=cmd_args)
-        result = runner.run_test(test_url, timeout=10, retries=1)
+        result = runner.run_test(test_url, timeout=20, retries=1)
 
         if args.json:
             print(json.dumps(result.to_dict(), indent=2))

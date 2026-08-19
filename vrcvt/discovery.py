@@ -77,3 +77,19 @@ class ProtonDiscovery:
             if candidate.is_dir():
                 return candidate
         return candidates[0]
+
+    @staticmethod
+    def find_steam_linux_runtime() -> Optional[Path]:
+        """Locate SteamLinuxRuntime container runner (preferring SteamLinuxRuntime_sniper for Proton 9+)."""
+        candidates = [
+            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_sniper/run"),
+            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/run",
+            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_soldier/run"),
+            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_soldier/run",
+            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime/run"),
+            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime/run",
+        ]
+        for c in candidates:
+            if c.is_file() and os.access(c, os.X_OK):
+                return c
+        return None

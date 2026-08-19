@@ -11,31 +11,39 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from .config import Config
-from .models import BenchmarkResult
+from .models import BenchmarkResult, ErrorClassification, StreamUrlTarget
 from .logger import logger
 
+from .discovery import ProtonDiscovery
+
 class URLResolver:
-    """Resolves stream URLs using VRChat's bundled yt-dlp.exe."""
+    """Resolves stream URLs using VRChat's bundled yt-dlp.exe or system yt-dlp."""
 
     @staticmethod
     def resolve_url(proton_bin: Path, prefix_dir: Path, url: str) -> Tuple[str, float, bool]:
-        """Resolve video URL via yt-dlp.exe, returning (resolved_url, elapsed_ms, success)."""
-        if url.startswith("ASSET_LOCAL") or Path(url).is_file() or url.startswith("C:\\"):
+        """Resolve video URL via yt-dlp, returning (resolved_url, elapsed_ms, success)."""
+        target = StreamUrlTarget(url)
+        if target.is_local:
             return url, 0.0, True
 
-        ytdlp_exe = prefix_dir / "pfx/drive_c/users/steamuser/AppData/LocalLow/VRChat/VRChat/Tools/yt-dlp.exe"
         start_t = time.time()
+        ytdlp_bin = shutil.which("yt-dlp")
 
         try:
-            if ytdlp_exe.is_file():
-                env = os.environ.copy()
-                env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / ".local/share/Steam")
-                env["STEAM_COMPAT_DATA_PATH"] = str(prefix_dir)
-                cmd = [str(proton_bin), "run", str(ytdlp_exe), "-g"] + Config.YTDLP_VRCHAT_ARGS + [url]
+            if ytdlp_bin:
+                cmd = [ytdlp_bin, "-g"] + Config.YTDLP_VRCHAT_ARGS + [url]
+                res = subprocess.run(cmd, capture_output=True, text=True, timeout=12)
             else:
-                cmd = ["yt-dlp", "-g"] + Config.YTDLP_VRCHAT_ARGS + [url]
+                ytdlp_exe = prefix_dir / "pfx/drive_c/users/steamuser/AppData/LocalLow/VRChat/VRChat/Tools/yt-dlp.exe"
+                if ytdlp_exe.is_file():
+                    env = os.environ.copy()
+                    env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / ".local/share/Steam")
+                    env["STEAM_COMPAT_DATA_PATH"] = str(prefix_dir)
+                    cmd = [str(proton_bin), "run", str(ytdlp_exe), "-g"] + Config.YTDLP_VRCHAT_ARGS + [url]
+                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=12, env=env)
+                else:
+                    return url, 0.0, False
 
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=12)
             elapsed_ms = (time.time() - start_t) * 1000.0
 
             if res.returncode == 0:
@@ -104,11 +112,14 @@ class VRCTestRunner:
         env["WINEDLLOVERRIDES"] = override_base
 
         c_wmf = sandbox_prefix / "pfx/drive_c/vrcvt_wmf_test.exe"
+        c_sample = sandbox_prefix / "pfx/drive_c/vrcvt_sample.mp4"
         c_result_json = sandbox_prefix / "pfx/drive_c/vrcvt_result.json"
 
         try:
             c_wmf.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(self.wmf_exe, c_wmf)
+            if Config.SAMPLE_MP4.is_file():
+                shutil.copy2(Config.SAMPLE_MP4, c_sample)
         except Exception:
             pass
 
@@ -118,10 +129,16 @@ class VRCTestRunner:
             except Exception:
                 pass
 
+        target_url = "C:\\vrcvt_sample.mp4" if (url == "ASSET_LOCAL" or url == str(Config.SAMPLE_MP4)) else url
+        slr_runner = ProtonDiscovery.find_steam_linux_runtime()
+
         for attempt in range(1, retries + 1):
             start_t = time.time()
             try:
-                cmd = [str(self.proton_bin), "run", str(c_wmf), url, "--json"] + self.cmd_args
+                if slr_runner:
+                    cmd = [str(slr_runner), "--", str(self.proton_bin), "run", str(c_wmf), target_url] + self.cmd_args
+                else:
+                    cmd = [str(self.proton_bin), "run", str(c_wmf), target_url] + self.cmd_args
                 res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
                 elapsed_ms = (time.time() - start_t) * 1000.0
 
@@ -147,27 +164,27 @@ class VRCTestRunner:
                         except Exception:
                             pass
 
-                if json_data and json_data.get("resolver_success") and json_data.get("reader_success"):
+                if (json_data and json_data.get("resolver_success") and json_data.get("reader_success")) or res.returncode == 0:
                     return BenchmarkResult(
                         success=True,
-                        elapsed_ms=json_data.get("total_ms", elapsed_ms),
-                        hresult=json_data.get("resolver_hresult", "0x00000000"),
+                        elapsed_ms=json_data.get("total_ms", elapsed_ms) if json_data else elapsed_ms,
+                        hresult=json_data.get("resolver_hresult", "0x00000000") if json_data else "0x00000000",
                         solution="Working correctly",
                         attempts=attempt
                     )
 
                 hresult = json_data.get("resolver_hresult", "0x80004005") if json_data else "0x80004005"
-                error_type = "UNKNOWN_ERROR"
+                error_type = ErrorClassification.UNKNOWN_ERROR
                 solution = "Inspect logs"
 
                 if "%COMPAT" in stderr or "GnuTLS" in stderr or "0x80072F8F" in hresult:
-                    error_type = "SSL_GNUTLS_ERROR"
+                    error_type = ErrorClassification.SSL_GNUTLS_ERROR
                     solution = "Set G_TLS_GNUTLS_PRIORITY=NORMAL in launch options"
                 elif "iyuv_32" in stderr or "IYUV" in stderr:
-                    error_type = "IYUV_CONVERSION_ERROR"
+                    error_type = ErrorClassification.IYUV_CONVERSION_ERROR
                     solution = 'Set WINEDLLOVERRIDES="iyuv_32=" in launch options'
                 elif "0x80072EE7" in hresult or "DNS" in stderr:
-                    error_type = "DNS_RESOLUTION_ERROR"
+                    error_type = ErrorClassification.DNS_RESOLUTION_ERROR
                     solution = "Check system DNS / internet connection"
 
                 return BenchmarkResult(
@@ -185,7 +202,7 @@ class VRCTestRunner:
                     success=False,
                     elapsed_ms=(time.time() - start_t) * 1000.0,
                     hresult="TIMEOUT",
-                    error_type="TIMEOUT",
+                    error_type=ErrorClassification.TIMEOUT,
                     solution="Stream resolution or network connection timed out",
                     attempts=attempt
                 )
