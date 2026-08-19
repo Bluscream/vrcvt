@@ -200,8 +200,10 @@ def resolve_url_ytdlp(proton_bin, prefix_dir, url):
     return url, elapsed_ms, 1, error_msg[:100], False
 
 def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
-    """Run wmf_test.exe inside an isolated test prefix to capture timing and HRESULTs without modifying VRChat prefix data."""
-    sandbox_prefix = "/tmp/vrcvt_sandbox_prefix"
+    """Run wmf_test.exe inside an isolated per-tool sandbox prefix to capture timing and HRESULTs without prefix upgrade delays."""
+    tool_folder = os.path.basename(os.path.dirname(proton_bin)) if os.path.basename(proton_bin) == "proton" else "default"
+    clean_tool_folder = "".join([c if c.isalnum() else "_" for c in tool_folder])
+    sandbox_prefix = f"/tmp/vrcvt_prefix_{clean_tool_folder}"
     os.makedirs(sandbox_prefix, exist_ok=True)
 
     if not os.path.isfile(wmf_exe):
@@ -233,25 +235,51 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     except Exception:
         pass
 
+    c_result_json = os.path.join(sandbox_prefix, "pfx/drive_c/vrcvt_result.json")
+    if os.path.isfile(c_result_json):
+        try:
+            os.remove(c_result_json)
+        except Exception:
+            pass
+
     for attempt in range(1, retries + 1):
         start_t = time.time()
         try:
             cmd = [proton_bin, "run", c_wmf, url, "--json"]
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=4, env=env)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=10, env=env)
             elapsed_ms = (time.time() - start_t) * 1000.0
             
             stdout = res.stdout
             stderr = res.stderr + "\n" + stdout
             
             json_data = None
-            for line in stdout.splitlines():
-                line = line.strip()
-                if line.startswith("{") and line.endswith("}"):
+
+            # First try loading result from c_result_json file
+            if os.path.isfile(c_result_json):
+                try:
+                    with open(c_result_json, "r") as f:
+                        json_data = json.load(f)
+                except Exception:
+                    pass
+
+            if not json_data:
+                first_brace = stdout.find("{")
+                last_brace = stdout.rfind("}")
+                if first_brace != -1 and last_brace > first_brace:
                     try:
-                        json_data = json.loads(line)
-                        break
+                        json_data = json.loads(stdout[first_brace:last_brace+1])
                     except Exception:
                         pass
+
+            if not json_data:
+                for line in stdout.splitlines():
+                    line = line.strip()
+                    if line.startswith("{") and line.endswith("}"):
+                        try:
+                            json_data = json.loads(line)
+                            break
+                        except Exception:
+                            pass
             
             if json_data and json_data.get("resolver_success") and json_data.get("reader_success"):
                 return {

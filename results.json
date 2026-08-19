@@ -1,0 +1,362 @@
+{
+  "generated_at": "2026-08-19 21:10:43",
+  "rankings": [
+    {
+      "rank": 1,
+      "proton_name": "Proton-GE RTSP Latest",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 144.5,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 2,
+      "proton_name": "Proton-GE RTSP Latest",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 148.3,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 3,
+      "proton_name": "Proton-GE RTSP Latest",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 149.7,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 4,
+      "proton_name": "Proton Hotfix",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 176.3,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 5,
+      "proton_name": "Proton Hotfix",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 176.9,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 6,
+      "proton_name": "Proton - Experimental",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 178.4,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 7,
+      "proton_name": "Proton - Experimental",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 178.8,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 8,
+      "proton_name": "Proton - Experimental",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 184.8,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 9,
+      "proton_name": "Proton Hotfix",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 185.8,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 10,
+      "proton_name": "Proton-GE RTSP Latest",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 196.3,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 11,
+      "proton_name": "Proton-GE Latest",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 216.8,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 12,
+      "proton_name": "Proton-GE Latest",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 217.6,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 13,
+      "proton_name": "Proton-GE Latest",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 221.9,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 14,
+      "proton_name": "Proton-GE Latest",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 301.9,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 15,
+      "proton_name": "Proton Hotfix",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 306.0,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 16,
+      "proton_name": "Proton - Experimental",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 329.1,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 17,
+      "proton_name": "Proton-CachyOS Latest",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 563.5,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 18,
+      "proton_name": "Proton-CachyOS Latest",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 569.9,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 19,
+      "proton_name": "Proton-CachyOS Latest",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 573.1,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 20,
+      "proton_name": "Proton-CachyOS Latest",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 762.1,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 21,
+      "proton_name": "Proton 9.0 (Beta)",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 2823.3,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 22,
+      "proton_name": "Proton 9.0 (Beta)",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 2823.5,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 23,
+      "proton_name": "Proton 9.0 (Beta)",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 2827.5,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 24,
+      "proton_name": "Proton 9.0 (Beta)",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 2941.5,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 25,
+      "proton_name": "GE-Proton9-25",
+      "env_label": "IYUV Override",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 3205.1,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 26,
+      "proton_name": "GE-Proton9-25",
+      "env_label": "GnuTLS Normal",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 3207.4,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 27,
+      "proton_name": "GE-Proton9-25",
+      "env_label": "Default (Unset)",
+      "env_vars": {},
+      "env_str": "",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 3235.3,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 28,
+      "proton_name": "GE-Proton9-25",
+      "env_label": "Full VRChat Env",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_count": 0,
+      "total_tests": 6,
+      "avg_ms": 3363.0,
+      "launch_cmd": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    }
+  ]
+}

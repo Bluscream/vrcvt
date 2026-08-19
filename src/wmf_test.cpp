@@ -94,17 +94,18 @@ int main(int argc, char* argv[]) {
     double total_ms = get_time_ms() - start_total;
 
     if (json_mode) {
-        printf("{\n");
-        printf("  \"url\": \"%s\",\n", url_mb);
-        printf("  \"mf_startup_ms\": %.2f,\n", mf_startup_ms);
-        printf("  \"resolver_ms\": %.2f,\n", resolver_ms);
-        printf("  \"resolver_success\": %s,\n", resolver_success ? "true" : "false");
-        printf("  \"resolver_hresult\": \"0x%08X\",\n", (unsigned int)hr_resolver_op);
-        printf("  \"reader_ms\": %.2f,\n", reader_ms);
-        printf("  \"reader_success\": %s,\n", reader_success ? "true" : "false");
-        printf("  \"reader_hresult\": \"0x%08X\",\n", (unsigned int)hr_reader_op);
-        printf("  \"total_ms\": %.2f\n", total_ms);
-        printf("}\n");
+        printf("{\"url\":\"%s\",\"mf_startup_ms\":%.2f,\"resolver_ms\":%.2f,\"resolver_success\":%s,\"resolver_hresult\":\"0x%08X\",\"reader_ms\":%.2f,\"reader_success\":%s,\"reader_hresult\":\"0x%08X\",\"total_ms\":%.2f}\n",
+               url_mb, mf_startup_ms, resolver_ms, resolver_success ? "true" : "false", (unsigned int)hr_resolver_op,
+               reader_ms, reader_success ? "true" : "false", (unsigned int)hr_reader_op, total_ms);
+        fflush(stdout);
+    }
+
+    FILE* f_out = fopen("C:\\vrcvt_result.json", "w");
+    if (f_out) {
+        fprintf(f_out, "{\"url\":\"%s\",\"mf_startup_ms\":%.2f,\"resolver_ms\":%.2f,\"resolver_success\":%s,\"resolver_hresult\":\"0x%08X\",\"reader_ms\":%.2f,\"reader_success\":%s,\"reader_hresult\":\"0x%08X\",\"total_ms\":%.2f}\n",
+                url_mb, mf_startup_ms, resolver_ms, resolver_success ? "true" : "false", (unsigned int)hr_resolver_op,
+                reader_ms, reader_success ? "true" : "false", (unsigned int)hr_reader_op, total_ms);
+        fclose(f_out);
     } else {
         printf("====================================================\n");
         printf(" [WMF Test Results] URL: %s\n", url_mb);
