@@ -324,7 +324,7 @@ def launch_vrchat_in_desktop_test_mode(world_id=None):
         except Exception as e:
             print(f"{COLOR_RED}[!] Failed to launch VRChat: {e}{COLOR_RESET}")
 
-def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None, try_launch=False):
+def run_matrix_test(custom_url=None, tool_filter=None, try_launch=False):
     """Run diagnostic matrix tests across Proton versions and configuration flags."""
     proton_list = find_proton_tools(filter_name=tool_filter)
     prefix_dir = find_vrchat_prefix()
@@ -342,7 +342,7 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None, try_lau
             pass
 
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-    print(f"{COLOR_BOLD}{COLOR_CYAN} VRCVideoTester (vrcvt) - Diagnostic Matrix & Compatibility Benchmark{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN} VRCVideoTester (vrcvt) - Full Diagnostic Matrix & Compatibility Benchmark{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f" Discovered Proton Tools : {len(proton_list)}")
     print(f" Target VRChat Prefix    : {prefix_dir}")
@@ -354,7 +354,7 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None, try_lau
         print(f"{COLOR_RED}[!] No Proton compatibility tools matching filter '{tool_filter}'.{COLOR_RESET}")
         return
 
-    # Select URLs to test (Full testing is default)
+    # Select URLs to test (Full testing across all sample streams is mandatory)
     urls_to_test = {}
     if custom_url:
         urls_to_test["Custom URL"] = custom_url
@@ -419,15 +419,13 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None, try_lau
 
 def main():
     parser = argparse.ArgumentParser(description="VRCVideoTester (vrcvt) - VRChat Video Player Compatibility Tester")
-    parser.add_argument("--quick", action="store_true", help="Run quick diagnostic test on primary Proton tool")
-    parser.add_argument("--all", action="store_true", help="Run comprehensive matrix test suite across all Proton versions")
     parser.add_argument("--tool", type=str, help="Filter test to specific Proton tool name (e.g. RTSP)")
     parser.add_argument("--url", type=str, help="Test a specific video or stream URL")
     parser.add_argument("--try", dest="try_launch", action="store_true", help="Launch VRChat in Desktop mode with full debug flags into video test world after benchmarking")
     parser.add_argument("--json", action="store_true", help="Output raw JSON results for automated tools")
     args = parser.parse_args()
 
-    run_matrix_test(quick_mode=args.quick or (not args.all and not args.tool), custom_url=args.url, tool_filter=args.tool, try_launch=args.try_launch)
+    run_matrix_test(custom_url=args.url, tool_filter=args.tool, try_launch=args.try_launch)
 
 if __name__ == "__main__":
     main()
