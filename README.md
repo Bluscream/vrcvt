@@ -47,7 +47,12 @@ cd vrcvt
 ./vrcvt
 
 # Run benchmark matrix AND launch VRChat in 4:3 Desktop Debug Mode into test world
+# Run benchmark matrix AND launch VRChat using #1 ranked configuration
 ./vrcvt --try
+
+# Launch VRChat using a specific rank number (e.g. #2 or #3 from saved results.json)
+./vrcvt --try 2
+./vrcvt --no-tests --try 3
 
 # Skip benchmark tests and launch VRChat directly in Desktop Debug Mode
 ./vrcvt --no-tests
@@ -65,8 +70,8 @@ cd vrcvt
 
 | Argument | Description |
 | :--- | :--- |
-| *(default)* | Run mandatory diagnostic matrix across all installed Proton tools and test streams |
-| `--try` | Launch VRChat in 1024x768 (4:3) Desktop Debug mode into test world (`wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1`) using the #1 ranked benchmark configuration |
+| *(default)* | Run mandatory diagnostic matrix across all installed Proton tools and test streams, saving ranked combinations to `results.json` |
+| `--try [RANK]` | Launch VRChat in 1024x768 (4:3) Desktop Debug mode into test world (`wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1`) using target ranking (e.g. `--try 1`, `--try 2`, `--try 3`) |
 | `--no-tests` | Skip the benchmark testing phase and trigger direct `--try` VRChat desktop launch immediately |
 | `--url <URL>` | Benchmark a specific custom stream or video URL |
 | `--json` | Output results in raw JSON format |

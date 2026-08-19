@@ -321,10 +321,28 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
                 "attempts": attempt
             }
 
-def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
-    """Launch VRChat in desktop mode using the best dynamically discovered compatibility configuration."""
+def launch_vrchat_in_desktop_test_mode(world_id=None, target_rank=1, best_config=None):
+    """Launch VRChat in desktop mode using target ranking from results.json."""
     target_world_id = world_id or DEFAULT_TEST_WORLD_ID
     vrc_launch_uri = f"vrchat://launch?id={target_world_id}"
+
+    # Try loading target rank configuration from results.json
+    selected_config = best_config
+    if not selected_config:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir) if os.path.basename(script_dir) == "src" else script_dir
+        results_file = os.path.join(project_root, "results.json")
+        if os.path.isfile(results_file):
+            try:
+                with open(results_file, "r") as f:
+                    data = json.load(f)
+                rankings = data.get("rankings", [])
+                for r in rankings:
+                    if r.get("rank") == target_rank:
+                        selected_config = r
+                        break
+            except Exception:
+                pass
 
     # Kill any lingering zombie/reaper processes from prior runs that lock Steam AppId 438100
     try:
@@ -334,13 +352,14 @@ def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
         pass
 
     print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-    print(f"{COLOR_BOLD}{COLOR_CYAN} [--try Mode] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN} [--try #{target_rank}] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f" Target World ID : {target_world_id}")
-    if best_config:
-        print(f" Best Proton Tool: {COLOR_YELLOW}{best_config['proton_name']}{COLOR_RESET}")
-        print(f" Best Env Config : {COLOR_GREEN}{best_config['env_str']}{COLOR_RESET}")
-        print(f" Benchmark Score : {best_config['pass_count']}/{best_config['total_tests']} Streams Passed (Avg {best_config['avg_ms']:.0f}ms)")
+    print(f" Selected Rank   : #{target_rank}")
+    if selected_config:
+        print(f" Proton Tool     : {COLOR_YELLOW}{selected_config.get('proton_name', 'Default')}{COLOR_RESET}")
+        print(f" Env Config      : {COLOR_GREEN}{selected_config.get('env_str', 'Default')}{COLOR_RESET}")
+        print(f" Launch Command  : {selected_config.get('launch_cmd', '')}")
     print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
     print()
 
@@ -535,11 +554,34 @@ def run_matrix_test(custom_url=None, try_launch=False):
     # Sort: Pass Count (descending), then Avg Execution Time (ascending - fastest first!)
     ranked_combos.sort(key=lambda x: (-x["pass_count"], x["avg_ms"]))
 
-    print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
+    # Save benchmark rankings to results.json
+    results_file = os.path.join(project_root, "results.json")
+    try:
+        data = {
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "rankings": []
+        }
+        for idx, c in enumerate(ranked_combos, 1):
+            data["rankings"].append({
+                "rank": idx,
+                "proton_name": c["proton_name"],
+                "env_label": c["env_label"],
+                "env_vars": c["env_vars"],
+                "env_str": c["env_str"],
+                "pass_count": c["pass_count"],
+                "total_tests": c["total_tests"],
+                "avg_ms": round(c["avg_ms"], 1),
+                "launch_cmd": f"{c['env_str']} %command% --enable-avpro-in-proton --disable-hw-video-decoding".strip()
+            })
+        with open(results_file, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"{COLOR_GREEN}[✓] Saved benchmark rankings to {results_file}{COLOR_RESET}\n")
+    except Exception as e:
+        print(f"{COLOR_RED}[!] Failed to save results.json: {e}{COLOR_RESET}")
+
+    print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN} DYNAMIC RANKED RECOMMENDATIONS (BEST TO WORST BY PASS RATE & TIMING){COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
-
-    best_config = ranked_combos[0] if ranked_combos else None
 
     for idx, c in enumerate(ranked_combos, 1):
         status_tag = f"{COLOR_GREEN}PASS{COLOR_RESET}" if c['pass_count'] == c['total_tests'] else (f"{COLOR_YELLOW}PARTIAL{COLOR_RESET}" if c['pass_count'] > 0 else f"{COLOR_RED}FAIL{COLOR_RESET}")
@@ -552,22 +594,24 @@ def run_matrix_test(custom_url=None, try_launch=False):
         print()
 
     if try_launch:
-        launch_vrchat_in_desktop_test_mode(best_config=best_config)
+        rank_num = try_launch if isinstance(try_launch, int) else 1
+        launch_vrchat_in_desktop_test_mode(target_rank=rank_num)
 
     cleanup_artifacts_and_zombies()
 
 def main():
     parser = argparse.ArgumentParser(description="VRCVideoTester (vrcvt) - Dynamic VRChat Video Player Compatibility Benchmark")
     parser.add_argument("--url", type=str, help="Test a specific video or stream URL")
-    parser.add_argument("--try", dest="try_launch", action="store_true", help="Launch VRChat in Desktop mode using the #1 best benchmark configuration into video test world")
+    parser.add_argument("--try", dest="try_rank", nargs="?", const=1, type=int, help="Launch VRChat in Desktop mode using target ranking number (e.g. --try 1, --try 2, --try 3)")
     parser.add_argument("--no-tests", dest="no_tests", action="store_true", help="Skip benchmark testing phase and launch VRChat directly")
     parser.add_argument("--json", action="store_true", help="Output raw JSON results for automated tools")
     args = parser.parse_args()
 
     if args.no_tests:
-        launch_vrchat_in_desktop_test_mode()
+        rank_num = args.try_rank if args.try_rank else 1
+        launch_vrchat_in_desktop_test_mode(target_rank=rank_num)
     else:
-        run_matrix_test(custom_url=args.url, try_launch=args.try_launch)
+        run_matrix_test(custom_url=args.url, try_launch=args.try_rank)
 
 if __name__ == "__main__":
     main()
