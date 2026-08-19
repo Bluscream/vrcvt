@@ -14,6 +14,7 @@ import glob
 import atexit
 import shutil
 from pathlib import Path
+from collections import defaultdict
 
 # ANSI Terminal Formatting
 COLOR_RESET = "\033[0m"
@@ -58,7 +59,7 @@ VRCHAT_DEBUG_ARGS = [
 # Default Video Test World ID (Eurofurence EF30)
 DEFAULT_TEST_WORLD_ID = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1"
 
-def find_proton_tools(filter_name=None):
+def find_proton_tools():
     """Discover installed Proton versions on the system."""
     proton_dirs = set()
     search_paths = [
@@ -74,8 +75,6 @@ def find_proton_tools(filter_name=None):
             proton_bin = os.path.join(entry, "proton")
             if os.path.isfile(proton_bin) and os.access(proton_bin, os.X_OK):
                 tool_name = os.path.basename(entry)
-                if filter_name and filter_name.lower() not in tool_name.lower():
-                    continue
                 proton_dirs.add((tool_name, entry, proton_bin))
                 
     return sorted(list(proton_dirs), key=lambda x: x[0])
@@ -298,8 +297,8 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
                 "attempts": attempt
             }
 
-def launch_vrchat_in_desktop_test_mode(world_id=None):
-    """Launch VRChat in desktop mode with full debug/logging command line flags and watch video test world."""
+def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
+    """Launch VRChat in desktop mode using the best dynamically discovered compatibility configuration."""
     target_world_id = world_id or DEFAULT_TEST_WORLD_ID
     vrc_launch_uri = f"vrchat://launch?id={target_world_id}"
     steam_rungame_uri = f"steam://rungameid/438100//{vrc_launch_uri}"
@@ -308,6 +307,10 @@ def launch_vrchat_in_desktop_test_mode(world_id=None):
     print(f"{COLOR_BOLD}{COLOR_CYAN} [--try Mode] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f" Target World ID : {target_world_id}")
+    if best_config:
+        print(f" Best Proton Tool: {COLOR_YELLOW}{best_config['proton_name']}{COLOR_RESET}")
+        print(f" Best Env Config : {COLOR_GREEN}{best_config['env_str']}{COLOR_RESET}")
+        print(f" Benchmark Score : {best_config['pass_count']}/{best_config['total_tests']} Streams Passed (Avg {best_config['avg_ms']:.0f}ms)")
     print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
     print()
 
@@ -324,9 +327,9 @@ def launch_vrchat_in_desktop_test_mode(world_id=None):
         except Exception as e:
             print(f"{COLOR_RED}[!] Failed to launch VRChat: {e}{COLOR_RESET}")
 
-def run_matrix_test(custom_url=None, tool_filter=None, try_launch=False):
+def run_matrix_test(custom_url=None, try_launch=False):
     """Run diagnostic matrix tests across Proton versions and configuration flags."""
-    proton_list = find_proton_tools(filter_name=tool_filter)
+    proton_list = find_proton_tools()
     prefix_dir = find_vrchat_prefix()
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -351,7 +354,7 @@ def run_matrix_test(custom_url=None, tool_filter=None, try_launch=False):
     print()
 
     if not proton_list:
-        print(f"{COLOR_RED}[!] No Proton compatibility tools matching filter '{tool_filter}'.{COLOR_RESET}")
+        print(f"{COLOR_RED}[!] No Proton compatibility tools found.{COLOR_RESET}")
         return
 
     # Select URLs to test (Full testing across all sample streams is mandatory)
@@ -384,6 +387,7 @@ def run_matrix_test(custom_url=None, tool_filter=None, try_launch=False):
                 test_result["proton_name"] = p_name
                 test_result["url_label"] = url_label
                 test_result["env_label"] = env_label
+                test_result["env_vars"] = env_vars
                 test_result["ytdlp_ms"] = ytdlp_ms
                 test_result["ytdlp_err"] = ytdlp_err
                 test_result["ssl_bypass_used"] = ssl_bypass_used
@@ -408,24 +412,65 @@ def run_matrix_test(custom_url=None, tool_filter=None, try_launch=False):
         print(f"{r['proton_name'][:22]:<22} | {r['url_label'][:16]:<16} | {r['env_label'][:18]:<18} | {status_str:<17} | {time_str:<8} | {hres_str:<10} | {sol_str}")
 
     print("-" * 115)
-    print(f"{COLOR_BOLD}Recommended Launch Options for VRChat:{COLOR_RESET}")
-    print(f"  WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding")
-    print()
+
+    # Dynamic Ranking of Combinations (Best to Worst by Pass Count & Timing)
+    combo_stats = defaultdict(lambda: {"pass_count": 0, "total_tests": 0, "total_ms": 0.0, "env_vars": {}, "env_label": "", "proton_name": ""})
+    
+    for r in results:
+        key = (r["proton_name"], r["env_label"])
+        combo = combo_stats[key]
+        combo["proton_name"] = r["proton_name"]
+        combo["env_label"] = r["env_label"]
+        combo["env_vars"] = r["env_vars"]
+        combo["total_tests"] += 1
+        combo["total_ms"] += r["elapsed_ms"]
+        if r["success"]:
+            combo["pass_count"] += 1
+
+    ranked_combos = []
+    for (p_name, e_label), stats in combo_stats.items():
+        avg_ms = stats["total_ms"] / max(stats["total_tests"], 1)
+        env_str = " ".join([f'{k}="{v}"' if ' ' in v else f'{k}={v}' for k, v in stats["env_vars"].items()])
+        ranked_combos.append({
+            "proton_name": p_name,
+            "env_label": e_label,
+            "env_vars": stats["env_vars"],
+            "env_str": env_str,
+            "pass_count": stats["pass_count"],
+            "total_tests": stats["total_tests"],
+            "avg_ms": avg_ms
+        })
+
+    # Sort: Pass Count (descending), then Avg Execution Time (ascending - fastest first!)
+    ranked_combos.sort(key=lambda x: (-x["pass_count"], x["avg_ms"]))
+
+    print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN} DYNAMIC RANKED RECOMMENDATIONS (BEST TO WORST BY PASS RATE & TIMING){COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
+
+    best_config = ranked_combos[0] if ranked_combos else None
+
+    for idx, c in enumerate(ranked_combos[:5], 1):
+        tag = f"{COLOR_GREEN}[#1 BEST RECOMMENDED]{COLOR_RESET}" if idx == 1 else f"#{idx}"
+        env_cmd = f"{c['env_str']} %command% --enable-avpro-in-proton --disable-hw-video-decoding".strip()
+        print(f" {tag} Proton: {COLOR_YELLOW}{c['proton_name']}{COLOR_RESET} | Env: {COLOR_CYAN}{c['env_label']}{COLOR_RESET}")
+        print(f"     Pass Rate : {c['pass_count']}/{c['total_tests']} Passed ({c['avg_ms']:.0f}ms avg)")
+        print(f"     Launch Cmd: {COLOR_BOLD}{env_cmd}{COLOR_RESET}")
+        print()
 
     if try_launch:
-        launch_vrchat_in_desktop_test_mode()
+        launch_vrchat_in_desktop_test_mode(best_config=best_config)
 
     cleanup_artifacts_and_zombies()
 
 def main():
-    parser = argparse.ArgumentParser(description="VRCVideoTester (vrcvt) - VRChat Video Player Compatibility Tester")
-    parser.add_argument("--tool", type=str, help="Filter test to specific Proton tool name (e.g. RTSP)")
+    parser = argparse.ArgumentParser(description="VRCVideoTester (vrcvt) - Dynamic VRChat Video Player Compatibility Benchmark")
     parser.add_argument("--url", type=str, help="Test a specific video or stream URL")
-    parser.add_argument("--try", dest="try_launch", action="store_true", help="Launch VRChat in Desktop mode with full debug flags into video test world after benchmarking")
+    parser.add_argument("--try", dest="try_launch", action="store_true", help="Launch VRChat in Desktop mode using the #1 best benchmark configuration into video test world")
     parser.add_argument("--json", action="store_true", help="Output raw JSON results for automated tools")
     args = parser.parse_args()
 
-    run_matrix_test(custom_url=args.url, tool_filter=args.tool, try_launch=args.try_launch)
+    run_matrix_test(custom_url=args.url, try_launch=args.try_launch)
 
 if __name__ == "__main__":
     main()
