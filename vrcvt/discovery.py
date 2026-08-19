@@ -80,8 +80,10 @@ class ProtonDiscovery:
 
     @staticmethod
     def find_steam_linux_runtime() -> Optional[Path]:
-        """Locate SteamLinuxRuntime container runner (preferring SteamLinuxRuntime_sniper for Proton 9+)."""
+        """Locate SteamLinuxRuntime container runner (preferring SteamLinuxRuntime_4 for newest container support)."""
         candidates = [
+            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_4/run"),
+            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_4/run",
             Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_sniper/run"),
             Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/run",
             Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_soldier/run"),
