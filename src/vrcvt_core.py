@@ -343,20 +343,10 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None, try_lau
         print(f"{COLOR_RED}[!] No Proton compatibility tools matching filter '{tool_filter}'.{COLOR_RESET}")
         return
 
-    if quick_mode and not tool_filter and len(proton_list) > 1:
-        rtsp_tools = [p for p in proton_list if "rtsp" in p[0].lower()]
-        proton_list = rtsp_tools[:1] if rtsp_tools else proton_list[:1]
-
+    # Select URLs to test (Full testing is default)
     urls_to_test = {}
     if custom_url:
         urls_to_test["Custom URL"] = custom_url
-    elif quick_mode:
-        urls_to_test = {
-            "Local MP4": "C:\\sample.mp4",
-            "YouTube Video": DEFAULT_URLS["YouTube Video"],
-            "VRCDN RTSP": DEFAULT_URLS["VRCDN RTSP"],
-            "Eurofurence HLS": DEFAULT_URLS["Eurofurence HLS"]
-        }
     else:
         urls_to_test = DEFAULT_URLS.copy()
         urls_to_test["Local MP4"] = "C:\\sample.mp4"
