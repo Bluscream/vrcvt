@@ -450,11 +450,13 @@ def run_matrix_test(custom_url=None, try_launch=False):
 
     best_config = ranked_combos[0] if ranked_combos else None
 
-    for idx, c in enumerate(ranked_combos[:5], 1):
-        tag = f"{COLOR_GREEN}[#1 BEST RECOMMENDED]{COLOR_RESET}" if idx == 1 else f"#{idx}"
+    for idx, c in enumerate(ranked_combos, 1):
+        status_tag = f"{COLOR_GREEN}PASS{COLOR_RESET}" if c['pass_count'] == c['total_tests'] else (f"{COLOR_YELLOW}PARTIAL{COLOR_RESET}" if c['pass_count'] > 0 else f"{COLOR_RED}FAIL{COLOR_RESET}")
+        rank_tag = f"{COLOR_GREEN}#1 BEST{COLOR_RESET}" if idx == 1 else f"#{idx}"
         env_cmd = f"{c['env_str']} %command% --enable-avpro-in-proton --disable-hw-video-decoding".strip()
-        print(f" {tag} Proton: {COLOR_YELLOW}{c['proton_name']}{COLOR_RESET} | Env: {COLOR_CYAN}{c['env_label']}{COLOR_RESET}")
+        print(f" {rank_tag}: {status_tag}")
         print(f"     Pass Rate : {c['pass_count']}/{c['total_tests']} Passed ({c['avg_ms']:.0f}ms avg)")
+        print(f"     Proton: {COLOR_YELLOW}{c['proton_name']}{COLOR_RESET}")
         print(f"     Launch Cmd: {COLOR_BOLD}{env_cmd}{COLOR_RESET}")
         print()
 
