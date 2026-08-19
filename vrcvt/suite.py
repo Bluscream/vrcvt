@@ -17,8 +17,8 @@ from .launcher import VRCLauncher
 from .logger import logger
 
 DEFAULT_CMD_MATRIX = [
-    ("Full Video Comp + HW Decode", 'WINEDLLOVERRIDES="iyuv_32=" G_TLS_GNUTLS_PRIORITY=NORMAL PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn %command% --enable-hw-video-decoding --enable-avpro-in-proton'),
-    ("IYUV + GnuTLS", 'WINEDLLOVERRIDES="iyuv_32=" G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding'),
+    ("Full Video Comp + HW Decode + SSL", 'WINEDLLOVERRIDES="iyuv_32=" G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn %command% --enable-hw-video-decoding --enable-avpro-in-proton'),
+    ("IYUV + GnuTLS + SSL", 'WINEDLLOVERRIDES="iyuv_32=" G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt %command% --enable-avpro-in-proton --disable-hw-video-decoding'),
     ("IYUV Override", 'WINEDLLOVERRIDES="iyuv_32=" %command% --enable-avpro-in-proton --disable-hw-video-decoding'),
     ("GnuTLS Normal", 'G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding'),
     ("Default (Unset)", '%command% --enable-avpro-in-proton --disable-hw-video-decoding'),

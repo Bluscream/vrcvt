@@ -95,15 +95,19 @@ class VRCLauncher:
         logger.info(f" Debug Args      : {' '.join(Config.VRCHAT_DEBUG_ARGS)}\n")
 
         # Launch via bazzite-steam applaunch or steam:// protocol
+        env = os.environ.copy()
+        if selected_config and "env_vars" in selected_config and isinstance(selected_config["env_vars"], dict):
+            env.update(selected_config["env_vars"])
+
         try:
             cmd = ["bazzite-steam", "-applaunch", "438100", "--desktop", f"--watch-world={target_world_id}"]
-            subprocess.run(cmd, check=True)
+            subprocess.run(cmd, check=True, env=env)
             logger.success("Triggered VRChat desktop launch via bazzite-steam -applaunch.")
             return True
         except Exception:
             try:
                 cmd = ["steam", f"steam://rungameid/438100//{vrc_launch_uri}"]
-                subprocess.run(cmd, check=True)
+                subprocess.run(cmd, check=True, env=env)
                 logger.success("Triggered VRChat desktop launch via steam:// protocol.")
                 return True
             except Exception as e:
