@@ -291,7 +291,8 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
 def launch_vrchat_in_desktop_test_mode(world_location=None):
     """Launch VRChat in desktop mode with full debug/logging command line flags and join video test world."""
     target_instance = world_location or DEFAULT_TEST_WORLD_LOCATION
-    launch_url = f"vrchat://launch?id={target_instance}"
+    vrc_launch_uri = f"vrchat://launch?id={target_instance}"
+    steam_rungame_uri = f"steam://rungameid/438100//{vrc_launch_uri}"
 
     print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN} [--try Mode] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
@@ -300,16 +301,16 @@ def launch_vrchat_in_desktop_test_mode(world_location=None):
     print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
     print()
 
-    # Try launching via xdg-open protocol handler or bazzite-steam
+    # Launch directly via Steam URI protocol / bazzite-steam applaunch
     try:
-        cmd = ["xdg-open", launch_url]
+        cmd = ["steam", steam_rungame_uri]
         subprocess.run(cmd, check=True)
-        print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via xdg-open.{COLOR_RESET}")
+        print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via Steam URI protocol.{COLOR_RESET}")
     except Exception:
         try:
-            cmd = ["bazzite-steam", launch_url]
+            cmd = ["bazzite-steam", "-applaunch", "438100", vrc_launch_uri]
             subprocess.run(cmd, check=True)
-            print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via bazzite-steam.{COLOR_RESET}")
+            print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via bazzite-steam applaunch.{COLOR_RESET}")
         except Exception as e:
             print(f"{COLOR_RED}[!] Failed to launch VRChat: {e}{COLOR_RESET}")
 
