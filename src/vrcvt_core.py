@@ -45,8 +45,8 @@ YTDLP_VRCHAT_ARGS_DEFAULT = [
 # Standard VRChat Debug & Logging Launch Arguments
 VRCHAT_DEBUG_ARGS = [
     "--desktop",
-    "-screen-width", "1920",
-    "-screen-height", "1080",
+    "-screen-width", "1024",
+    "-screen-height", "768",
     "-screen-fullscreen", "0",
     "--enable-debug-gui",
     "--enable-sdk-log-levels",
