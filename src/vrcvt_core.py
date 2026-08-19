@@ -321,7 +321,13 @@ def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
     """Launch VRChat in desktop mode using the best dynamically discovered compatibility configuration."""
     target_world_id = world_id or DEFAULT_TEST_WORLD_ID
     vrc_launch_uri = f"vrchat://launch?id={target_world_id}"
-    steam_rungame_uri = f"steam://rungameid/438100//{vrc_launch_uri}"
+
+    # Kill any lingering zombie/reaper processes from prior runs that lock Steam AppId 438100
+    try:
+        subprocess.run(["pkill", "-f", "reaper SteamLaunch AppId=438100"], capture_output=True)
+        subprocess.run(["pkill", "-f", "VRChat.exe"], capture_output=True)
+    except Exception:
+        pass
 
     print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN} [--try Mode] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
@@ -334,16 +340,16 @@ def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
     print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
     print()
 
-    # Launch directly via Steam URI protocol / bazzite-steam applaunch
+    # Launch directly via Steam URI protocol / bazzite-steam applaunch with explicit --desktop flag
     try:
-        cmd = ["steam", steam_rungame_uri]
+        cmd = ["bazzite-steam", "-applaunch", "438100", "--desktop", f"--watch-world={target_world_id}"]
         subprocess.run(cmd, check=True)
-        print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via Steam URI protocol.{COLOR_RESET}")
+        print(f"{COLOR_GREEN}[✓] Triggered VRChat desktop launch via bazzite-steam -applaunch.{COLOR_RESET}")
     except Exception:
         try:
-            cmd = ["bazzite-steam", "-applaunch", "438100", vrc_launch_uri]
+            cmd = ["steam", f"steam://rungameid/438100//{vrc_launch_uri}"]
             subprocess.run(cmd, check=True)
-            print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via bazzite-steam applaunch.{COLOR_RESET}")
+            print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via Steam URI protocol.{COLOR_RESET}")
         except Exception as e:
             print(f"{COLOR_RED}[!] Failed to launch VRChat: {e}{COLOR_RESET}")
 
