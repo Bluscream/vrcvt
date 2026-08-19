@@ -79,6 +79,19 @@ def find_proton_tools():
                 
     return sorted(list(proton_dirs), key=lambda x: x[0])
 
+def check_and_unlock_h264():
+    """Verify if Steam's H.264 codec payload (mfh264enc.dll) is unlocked, and auto-trigger unlock if missing."""
+    global_pfx = os.path.expanduser("~/.local/share/Steam/steamapps/compatdata/0/pfx/drive_c/windows/system32/mfh264enc.dll")
+    if not os.path.isfile(global_pfx):
+        print(f"{COLOR_YELLOW}[!] H.264 codec payload (mfh264enc.dll) not found in Steam runtime. Triggering steam://unlockh264/...{COLOR_RESET}")
+        try:
+            subprocess.run(["steam", "steam://unlockh264/"], capture_output=True, timeout=5)
+            print(f"{COLOR_GREEN}[✓] Triggered steam://unlockh264/ payload installation.{COLOR_RESET}")
+        except Exception as e:
+            print(f"{COLOR_RED}[!] Failed to trigger steam://unlockh264/: {e}{COLOR_RESET}")
+    else:
+        print(f"{COLOR_GREEN}[✓] H.264 codec payload (mfh264enc.dll) verified in Steam runtime.{COLOR_RESET}")
+
 def find_vrchat_prefix():
     """Locate VRChat compatibility prefix data directory."""
     candidates = [
@@ -329,6 +342,7 @@ def launch_vrchat_in_desktop_test_mode(world_id=None, best_config=None):
 
 def run_matrix_test(custom_url=None, try_launch=False):
     """Run diagnostic matrix tests across Proton versions and configuration flags."""
+    check_and_unlock_h264()
     proton_list = find_proton_tools()
     prefix_dir = find_vrchat_prefix()
     
