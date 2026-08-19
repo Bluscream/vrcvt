@@ -11,6 +11,8 @@ import subprocess
 import json
 import argparse
 import glob
+import atexit
+import shutil
 from pathlib import Path
 
 # ANSI Terminal Formatting
@@ -32,11 +34,10 @@ DEFAULT_URLS = {
     "HTTPS Direct MP4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
 }
 
-# VRChat yt-dlp Mimicry Headers & Arguments
+# VRChat yt-dlp Standard Parameters (Default does NOT pass --no-check-certificates)
 VRCHAT_USER_AGENT = "VRChat/2024.3.2"
-YTDLP_VRCHAT_ARGS = [
+YTDLP_VRCHAT_ARGS_DEFAULT = [
     "--user-agent", VRCHAT_USER_AGENT,
-    "--no-check-certificates",
     "--no-cache-dir",
     "--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
 ]
@@ -76,47 +77,84 @@ def find_vrchat_prefix():
             return path
     return candidates[0]
 
-def resolve_url_ytdlp(proton_bin, prefix_dir, url, retries=2):
-    """Resolve video URL using VRChat's yt-dlp.exe or system yt-dlp with VRChat headers."""
+def cleanup_artifacts_and_zombies():
+    """Clean up temporary files and kill any lingering Wine/Proton zombie processes."""
+    prefix_dir = find_vrchat_prefix()
+    drive_c = os.path.join(prefix_dir, "pfx/drive_c")
+    
+    temp_files = [
+        os.path.join(drive_c, "vrcvt_wmf_test.exe"),
+        os.path.join(drive_c, "vrcvt_out.txt"),
+        os.path.join(drive_c, "vrcvt_out.json"),
+        os.path.join(drive_c, "sample.mp4"),
+        "/tmp/ytdlp_out.txt",
+        "/tmp/wmf_run.txt"
+    ]
+    
+    for f in temp_files:
+        if os.path.exists(f):
+            try:
+                os.remove(f)
+            except Exception:
+                pass
+                
+    # Kill wineserver and leftover test processes
+    for proc in ["wineserver", "vrcvt_wmf_test.exe", "wmf_test.exe"]:
+        try:
+            subprocess.run(["pkill", "-9", "-f", proc], capture_output=True, timeout=3)
+        except Exception:
+            pass
+
+atexit.register(cleanup_artifacts_and_zombies)
+
+def resolve_url_ytdlp(proton_bin, prefix_dir, url):
+    """Resolve video URL using VRChat's yt-dlp.exe. Tests default cert verification first, then --no-check-certificates if SSL fails."""
     if url.startswith("ASSET_LOCAL") or os.path.exists(url) or url.startswith("C:\\"):
-        return url, 0.0, 1, None
+        return url, 0.0, 1, None, False
 
     ytdlp_exe = os.path.join(prefix_dir, "pfx/drive_c/users/steamuser/AppData/LocalLow/VRChat/VRChat/Tools/yt-dlp.exe")
     
-    for attempt in range(1, retries + 1):
-        start_t = time.time()
+    # Test 1: Standard VRChat call WITHOUT --no-check-certificates
+    start_t = time.time()
+    try:
+        if os.path.isfile(ytdlp_exe):
+            env = os.environ.copy()
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = os.path.expanduser("~/.local/share/Steam")
+            env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
+            cmd = [proton_bin, "run", ytdlp_exe, "-g"] + YTDLP_VRCHAT_ARGS_DEFAULT + [url]
+        else:
+            cmd = ["yt-dlp", "-g"] + YTDLP_VRCHAT_ARGS_DEFAULT + [url]
+            
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=12)
+        elapsed_ms = (time.time() - start_t) * 1000.0
+        
+        if res.returncode == 0:
+            urls = [line.strip() for line in res.stdout.splitlines() if line.strip().startswith("http")]
+            if urls:
+                return urls[-1], elapsed_ms, 1, None, False
+                
+        error_msg = res.stderr.strip() or f"Exit code {res.returncode}"
+    except Exception as e:
+        elapsed_ms = (time.time() - start_t) * 1000.0
+        error_msg = str(e)
+
+    # Test 2: If Test 1 failed with SSL/Cert error, retry WITH --no-check-certificates
+    is_ssl_err = "SSL" in error_msg or "CERTIFICATE_VERIFY_FAILED" in error_msg or "certificate" in error_msg.lower()
+    if is_ssl_err:
+        start_t_retry = time.time()
         try:
-            if os.path.isfile(ytdlp_exe):
-                env = os.environ.copy()
-                env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = os.path.expanduser("~/.local/share/Steam")
-                env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
-                cmd = [proton_bin, "run", ytdlp_exe, "-g"] + YTDLP_VRCHAT_ARGS + [url]
-            else:
-                cmd = ["yt-dlp", "-g"] + YTDLP_VRCHAT_ARGS + [url]
-                
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-            elapsed_ms = (time.time() - start_t) * 1000.0
+            cmd_retry = cmd + ["--no-check-certificates"]
+            res_retry = subprocess.run(cmd_retry, capture_output=True, text=True, timeout=12)
+            elapsed_ms_retry = (time.time() - start_t_retry) * 1000.0
             
-            if res.returncode == 0:
-                urls = [line.strip() for line in res.stdout.splitlines() if line.strip().startswith("http")]
+            if res_retry.returncode == 0:
+                urls = [line.strip() for line in res_retry.stdout.splitlines() if line.strip().startswith("http")]
                 if urls:
-                    return urls[-1], elapsed_ms, attempt, None
-            
-            error_msg = res.stderr.strip() or f"Exit code {res.returncode}"
-            if "Name or service not known" in error_msg or "getaddrinfo failed" in error_msg:
-                return url, elapsed_ms, attempt, "DNS_ERROR"
-            if "SSL" in error_msg or "CERTIFICATE_VERIFY_FAILED" in error_msg:
-                return url, elapsed_ms, attempt, "SSL_ERROR"
-                
-        except subprocess.TimeoutExpired:
-            elapsed_ms = (time.time() - start_t) * 1000.0
-            if attempt == retries:
-                return url, elapsed_ms, attempt, "TIMEOUT"
-        except Exception as e:
-            elapsed_ms = (time.time() - start_t) * 1000.0
-            return url, elapsed_ms, attempt, str(e)
-            
-    return url, (time.time() - start_t) * 1000.0, retries, "RESOLUTION_FAILED"
+                    return urls[-1], elapsed_ms + elapsed_ms_retry, 2, None, True
+        except Exception:
+            pass
+
+    return url, elapsed_ms, 1, error_msg[:100], False
 
 def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     """Run wmf_test.exe inside Proton prefix and capture timing, HRESULTs, and diagnostic errors."""
@@ -134,11 +172,9 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
     env.update(env_vars)
 
-    # Copy wmf_exe to prefix drive_c for clean execution
     c_wmf = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_wmf_test.exe")
     out_txt = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_out.txt")
     try:
-        import shutil
         shutil.copy2(wmf_exe, c_wmf)
     except Exception:
         pass
@@ -252,7 +288,6 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
     # Copy local_mp4 to C:\sample.mp4 in prefix for WMF testing
     c_sample = os.path.join(prefix_dir, "pfx/drive_c/sample.mp4")
     if os.path.isfile(local_mp4):
-        import shutil
         try:
             shutil.copy2(local_mp4, c_sample)
         except Exception:
@@ -271,12 +306,10 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
         print(f"{COLOR_RED}[!] No Proton compatibility tools matching filter '{tool_filter}'.{COLOR_RESET}")
         return
 
-    # If tool filter isn't specified and quick mode is active, pick active Proton tool
     if quick_mode and not tool_filter and len(proton_list) > 1:
         rtsp_tools = [p for p in proton_list if "rtsp" in p[0].lower()]
         proton_list = rtsp_tools[:1] if rtsp_tools else proton_list[:1]
 
-    # Select URLs to test
     urls_to_test = {}
     if custom_url:
         urls_to_test["Custom URL"] = custom_url
@@ -291,7 +324,6 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
         urls_to_test = DEFAULT_URLS.copy()
         urls_to_test["Local MP4"] = "C:\\sample.mp4"
 
-    # Env combinations
     env_configs = [
         ("GnuTLS Normal", {"G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
         ("Default (Unset)", {})
@@ -305,7 +337,7 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
         for url_label, raw_url in urls_to_test.items():
             url_target = "C:\\sample.mp4" if raw_url == "ASSET_LOCAL" else raw_url
             
-            res_url, ytdlp_ms, ytdlp_retries, ytdlp_err = resolve_url_ytdlp(p_bin, prefix_dir, url_target)
+            res_url, ytdlp_ms, ytdlp_attempts, ytdlp_err, ssl_bypass_used = resolve_url_ytdlp(p_bin, prefix_dir, url_target)
             
             for env_label, env_vars in env_configs:
                 test_result = run_wmf_test(p_bin, prefix_dir, wmf_exe, res_url, env_vars)
@@ -314,6 +346,7 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
                 test_result["env_label"] = env_label
                 test_result["ytdlp_ms"] = ytdlp_ms
                 test_result["ytdlp_err"] = ytdlp_err
+                test_result["ssl_bypass_used"] = ssl_bypass_used
                 results.append(test_result)
 
     # Print Summary Matrix Table
@@ -329,12 +362,17 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
         hres_str = r.get("hresult", "N/A")
         sol_str = r["solution"][:40]
 
+        if r.get("ssl_bypass_used"):
+            sol_str = f"[SSL Fix: --no-check-certificates] {sol_str}"
+
         print(f"{r['proton_name'][:22]:<22} | {r['url_label'][:16]:<16} | {r['env_label'][:18]:<18} | {status_str:<17} | {time_str:<8} | {hres_str:<10} | {sol_str}")
 
     print("-" * 115)
     print(f"{COLOR_BOLD}Recommended Launch Options for VRChat:{COLOR_RESET}")
     print(f"  WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding")
     print()
+
+    cleanup_artifacts_and_zombies()
 
 def main():
     parser = argparse.ArgumentParser(description="VRCVideoTester (vrcvt) - VRChat Video Player Compatibility Tester")

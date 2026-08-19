@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
     double start_total = get_time_ms();
     
     HRESULT hr_coinit = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    (void)hr_coinit;
     
     double start_mf = get_time_ms();
     HRESULT hr_mfstart = MFStartup(MF_VERSION, MFSTARTUP_FULL);
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]) {
     double resolver_ms = 0.0;
     int resolver_success = 0;
     int object_type = 0;
+    (void)object_type;
 
     IMFSourceResolver* pResolver = NULL;
     hr_resolver_create = MFCreateSourceResolver(&pResolver);
