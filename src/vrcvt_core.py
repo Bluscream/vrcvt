@@ -194,10 +194,14 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = os.path.expanduser("~/.local/share/Steam")
     env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
     env["WINEDEBUG"] = "-all"
-    # Run test harness headless so Wine does not open GUI console windows or steal cursor/focus
-    env.pop("DISPLAY", None)
-    env.pop("WAYLAND_DISPLAY", None)
+    
+    # Merge WINEDLLOVERRIDES to disable conhost and winemenubuilder window creation
+    override_base = "winemenubuilder.exe=d;conhost.exe=d"
+    if "WINEDLLOVERRIDES" in env_vars:
+        override_base = f"{override_base};{env_vars['WINEDLLOVERRIDES']}"
+    
     env.update(env_vars)
+    env["WINEDLLOVERRIDES"] = override_base
 
     c_wmf = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_wmf_test.exe")
     try:
