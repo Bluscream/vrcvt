@@ -193,6 +193,10 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     env = os.environ.copy()
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = os.path.expanduser("~/.local/share/Steam")
     env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
+    env["WINEDEBUG"] = "-all"
+    # Run test harness headless so Wine does not open GUI console windows or steal cursor/focus
+    env.pop("DISPLAY", None)
+    env.pop("WAYLAND_DISPLAY", None)
     env.update(env_vars)
 
     c_wmf = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_wmf_test.exe")
@@ -204,19 +208,11 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     for attempt in range(1, retries + 1):
         start_t = time.time()
         try:
-            out_json_path = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_out.json")
-            if os.path.exists(out_json_path):
-                os.remove(out_json_path)
-
-            cmd = [proton_bin, "run", "cmd.exe", "/c", f"C:\\vrcvt_wmf_test.exe \"{url}\" --json > C:\\vrcvt_out.json 2>&1"]
+            cmd = [proton_bin, "run", c_wmf, url, "--json"]
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=12, env=env)
             elapsed_ms = (time.time() - start_t) * 1000.0
             
-            stdout = ""
-            if os.path.exists(out_json_path):
-                with open(out_json_path, "r", errors="ignore") as f:
-                    stdout = f.read()
-
+            stdout = res.stdout
             stderr = res.stderr + "\n" + stdout
             
             json_data = None
