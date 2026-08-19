@@ -44,24 +44,23 @@ git clone https://github.com/Bluscream/vrcvt.git
 cd vrcvt
 
 # Run full diagnostic benchmark matrix across all installed Proton versions
-./vrcvt
+./bin/vrcvt
 
-# Run benchmark matrix AND launch VRChat in 4:3 Desktop Debug Mode into test world
 # Run benchmark matrix AND launch VRChat using #1 ranked configuration
-./vrcvt --try
+./bin/vrcvt --try
 
 # Launch VRChat using a specific rank number (e.g. #2 or #3 from saved results.json)
-./vrcvt --try 2
-./vrcvt --no-tests --try 3
+./bin/vrcvt --try 2
+./bin/vrcvt --no-tests --try 3
 
 # Skip benchmark tests and launch VRChat directly in Desktop Debug Mode
-./vrcvt --no-tests
+./bin/vrcvt --no-tests
 
 # Test a specific custom video or stream URL
-./vrcvt --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+./bin/vrcvt --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 # Output raw JSON results for automated tools
-./vrcvt --json
+./bin/vrcvt --json
 ```
 
 ---

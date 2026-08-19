@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+# VRCVideoTester (vrcvt) - CLI Launcher Executable
+# Repository: https://github.com/Bluscream/vrcvt
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="$(which python3 2>/dev/null || which python 2>/dev/null || echo "python3")"
+
+export PYTHONPATH="${SCRIPT_DIR}:${PYTHONPATH}"
+exec "${PYTHON_BIN}" -m vrcvt.cli "$@"

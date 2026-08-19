@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vrcvt"
+version = "1.1.0"
+description = "VRChat Video Player Compatibility Tester & Benchmark Suite"
+readme = "README.md"
+authors = [{ name = "Bluscream" }]
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+vrcvt = "vrcvt.cli:main"

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 """
-VRCVideoTester (vrcvt) - Single Test Runner Class
-Repository: https://github.com/Bluscream/vrcvt
+VRCVideoTester (vrcvt) - Single Test Execution Engine & URL Resolver
 """
 
 import os
@@ -10,6 +8,39 @@ import time
 import subprocess
 import json
 import shutil
+from .config import YTDLP_VRCHAT_ARGS_DEFAULT
+
+def resolve_url_ytdlp(proton_bin, prefix_dir, url):
+    """Resolve video URL using VRChat's yt-dlp.exe."""
+    if url.startswith("ASSET_LOCAL") or os.path.exists(url) or url.startswith("C:\\"):
+        return url, 0.0, 1, None, False
+
+    ytdlp_exe = os.path.join(prefix_dir, "pfx/drive_c/users/steamuser/AppData/LocalLow/VRChat/VRChat/Tools/yt-dlp.exe")
+    
+    start_t = time.time()
+    try:
+        if os.path.isfile(ytdlp_exe):
+            env = os.environ.copy()
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = os.path.expanduser("~/.local/share/Steam")
+            env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
+            cmd = [proton_bin, "run", ytdlp_exe, "-g"] + YTDLP_VRCHAT_ARGS_DEFAULT + [url]
+        else:
+            cmd = ["yt-dlp", "-g"] + YTDLP_VRCHAT_ARGS_DEFAULT + [url]
+            
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=12)
+        elapsed_ms = (time.time() - start_t) * 1000.0
+        
+        if res.returncode == 0:
+            urls = [line.strip() for line in res.stdout.splitlines() if line.strip().startswith("http")]
+            if urls:
+                return urls[-1], elapsed_ms, 1, None, False
+                
+        error_msg = res.stderr.strip() or f"Exit code {res.returncode}"
+    except Exception as e:
+        elapsed_ms = (time.time() - start_t) * 1000.0
+        error_msg = str(e)
+        
+    return url, elapsed_ms, 1, error_msg[:100], False
 
 class VRCTestRunner:
     """Executes a single video stream compatibility test using a specified Proton tool, environment variables, and launch flags."""
@@ -21,8 +52,8 @@ class VRCTestRunner:
         self.cmd_args = cmd_args or []
 
         # Locate project root and wmf_test.exe binary
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(script_dir) if os.path.basename(script_dir) == "src" else script_dir
+        package_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(package_dir)
         self.wmf_exe = wmf_exe or os.path.join(project_root, "assets/wmf_test.exe")
 
     def run_test(self, url, timeout=10, retries=1):
