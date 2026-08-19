@@ -168,7 +168,8 @@ class VRCTestRunner:
         elif self.container_runner:
             slr_runner = Path(self.container_runner)
         else:
-            slr_runner = ProtonDiscovery.find_steam_linux_runtime()
+            proton_name = self.proton_bin.parent.name if (self.proton_bin and self.proton_bin.name == "proton") else (self.proton_bin.name if self.proton_bin else None)
+            slr_runner = ProtonDiscovery.find_steam_linux_runtime(proton_name)
 
         for attempt in range(1, retries + 1):
             start_t = time.time()

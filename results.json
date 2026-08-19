@@ -1,11 +1,50 @@
 {
-  "generated_at": "2026-08-19 23:07:38",
-  "suite_runtime_seconds": 41.31,
+  "generated_at": "2026-08-19 23:17:47",
+  "suite_runtime_seconds": 43.97,
   "rankings": [
     {
       "rank": 1,
       "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
+      "runtime_name": "SteamLinuxRuntime_sniper",
+      "env_vars": {
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
+      },
+      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
+      "pass_rate": "2/2",
+      "avg_ms": 2338.0,
+      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 2,
+      "proton_name": "GE-Proton9-25",
+      "runtime_name": "SteamLinuxRuntime_sniper",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32="
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
+      "pass_rate": "2/2",
+      "avg_ms": 2352.0,
+      "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 3,
+      "proton_name": "GE-Proton9-25",
+      "runtime_name": "SteamLinuxRuntime_sniper",
+      "env_vars": {
+        "WINEDLLOVERRIDES": "iyuv_32=",
+        "G_TLS_GNUTLS_PRIORITY": "NORMAL",
+        "SSL_CERT_DIR": "/etc/ssl/certs",
+        "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"
+      },
+      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt",
+      "pass_rate": "2/2",
+      "avg_ms": 2501.5,
+      "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+    },
+    {
+      "rank": 4,
+      "proton_name": "GE-Proton9-25",
+      "runtime_name": "SteamLinuxRuntime_sniper",
       "env_vars": {
         "WINEDLLOVERRIDES": "iyuv_32=",
         "G_TLS_GNUTLS_PRIORITY": "NORMAL",
@@ -16,57 +55,18 @@
       },
       "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn",
       "pass_rate": "2/2",
-      "avg_ms": 4057.2,
+      "avg_ms": 3889.4,
       "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn %command% --enable-hw-video-decoding --enable-avpro-in-proton"
-    },
-    {
-      "rank": 2,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {},
-      "env_str": "",
-      "pass_rate": "2/2",
-      "avg_ms": 4131.4,
-      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
-    },
-    {
-      "rank": 3,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {
-        "WINEDLLOVERRIDES": "iyuv_32="
-      },
-      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
-      "pass_rate": "2/2",
-      "avg_ms": 4133.5,
-      "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" %command% --enable-avpro-in-proton --disable-hw-video-decoding"
-    },
-    {
-      "rank": 4,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {
-        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
-      },
-      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
-      "pass_rate": "2/2",
-      "avg_ms": 4153.9,
-      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
     },
     {
       "rank": 5,
       "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {
-        "WINEDLLOVERRIDES": "iyuv_32=",
-        "G_TLS_GNUTLS_PRIORITY": "NORMAL",
-        "SSL_CERT_DIR": "/etc/ssl/certs",
-        "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"
-      },
-      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt",
+      "runtime_name": "SteamLinuxRuntime_sniper",
+      "env_vars": {},
+      "env_str": "",
       "pass_rate": "2/2",
-      "avg_ms": 4172.1,
-      "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL SSL_CERT_DIR=/etc/ssl/certs SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt %command% --enable-avpro-in-proton --disable-hw-video-decoding"
+      "avg_ms": 10897.7,
+      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
     }
   ]
 }

@@ -79,18 +79,30 @@ class ProtonDiscovery:
         return candidates[0]
 
     @staticmethod
-    def find_steam_linux_runtime() -> Optional[Path]:
-        """Locate SteamLinuxRuntime container runner (preferring SteamLinuxRuntime_4 for newest container support)."""
-        candidates = [
-            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_4/run"),
-            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_4/run",
-            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_sniper/run"),
-            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/run",
-            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_soldier/run"),
-            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_soldier/run",
-            Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime/run"),
-            Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime/run",
-        ]
+    def find_steam_linux_runtime(proton_name: Optional[str] = None) -> Optional[Path]:
+        """Locate SteamLinuxRuntime container runner, matching the Proton version requirements."""
+        if proton_name and ("Proton 8" in proton_name or "GE-Proton8" in proton_name):
+            candidates = [
+                Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_soldier/run"),
+                Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_soldier/run",
+            ]
+        elif proton_name and ("GE-Proton9" in proton_name or "Proton 9" in proton_name or "Experimental" in proton_name):
+            candidates = [
+                Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_sniper/run"),
+                Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/run",
+                Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_4/run"),
+                Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_4/run",
+            ]
+        else:
+            candidates = [
+                Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_4/run"),
+                Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_4/run",
+                Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_sniper/run"),
+                Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper/run",
+                Path("/run/media/system/Data/Games/Steam/steamapps/common/SteamLinuxRuntime_soldier/run"),
+                Path.home() / ".local/share/Steam/steamapps/common/SteamLinuxRuntime_soldier/run",
+            ]
+
         for c in candidates:
             if c.is_file() and os.access(c, os.X_OK):
                 return c
