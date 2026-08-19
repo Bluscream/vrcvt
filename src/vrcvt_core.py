@@ -55,7 +55,8 @@ VRCHAT_DEBUG_ARGS = [
     "--disable-hw-video-decoding"
 ]
 
-# Default Video Test World Instance (Eurofurence EF30 Public/Private Instance)
+# Default Video Test World (Eurofurence EF30)
+DEFAULT_TEST_WORLD_ID = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1"
 DEFAULT_TEST_WORLD_LOCATION = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1:19431~group(grp_3b67b24d-6ae2-484b-a0b6-c26255232370)~groupAccessType(public)~region(eu)"
 
 def find_proton_tools(filter_name=None):
