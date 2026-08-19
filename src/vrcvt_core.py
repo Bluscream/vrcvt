@@ -391,6 +391,16 @@ def run_matrix_test(custom_url=None, try_launch=False):
         ("Default (Unset)", {})
     ]
 
+    # Pre-resolve test URLs upfront (once for the suite) to eliminate redundant yt-dlp invocations across all 11 Proton tools
+    primary_p_bin = proton_list[0][2]
+    resolved_url_map = {}
+    print(f" {now_str} Pre-resolving stream URLs via yt-dlp...")
+    for url_label, raw_url in urls_to_test.items():
+        url_target = "C:\\sample.mp4" if raw_url == "ASSET_LOCAL" else raw_url
+        res_info = resolve_url_ytdlp(primary_p_bin, prefix_dir, url_target)
+        resolved_url_map[url_label] = res_info
+    print(f" {datetime.now().strftime('[%H:%M:%S]')} All stream URLs resolved successfully.\n")
+
     results = []
 
     for p_name, p_dir, p_bin in proton_list:
@@ -399,9 +409,7 @@ def run_matrix_test(custom_url=None, try_launch=False):
         print(f"{p_now} {COLOR_BOLD}-> Testing Compatibility Tool: {COLOR_YELLOW}{p_name}{COLOR_RESET}")
         
         for url_label, raw_url in urls_to_test.items():
-            url_target = "C:\\sample.mp4" if raw_url == "ASSET_LOCAL" else raw_url
-            
-            res_url, ytdlp_ms, ytdlp_attempts, ytdlp_err, ssl_bypass_used = resolve_url_ytdlp(p_bin, prefix_dir, url_target)
+            res_url, ytdlp_ms, ytdlp_attempts, ytdlp_err, ssl_bypass_used = resolved_url_map[url_label]
             
             for env_label, env_vars in env_configs:
                 test_result = run_wmf_test(p_bin, prefix_dir, wmf_exe, res_url, env_vars)
