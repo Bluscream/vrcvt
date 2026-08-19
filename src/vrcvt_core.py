@@ -42,6 +42,22 @@ YTDLP_VRCHAT_ARGS_DEFAULT = [
     "--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
 ]
 
+# Standard VRChat Debug & Logging Launch Arguments
+VRCHAT_DEBUG_ARGS = [
+    "--desktop",
+    "-screen-width", "1920",
+    "-screen-height", "1080",
+    "-screen-fullscreen", "0",
+    "--enable-debug-gui",
+    "--enable-sdk-log-levels",
+    "--enable-udon-debug-logging",
+    "--enable-avpro-in-proton",
+    "--disable-hw-video-decoding"
+]
+
+# Default Video Test World Instance (Eurofurence EF30 Public/Private Instance)
+DEFAULT_TEST_WORLD_LOCATION = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1:19431~group(grp_3b67b24d-6ae2-484b-a0b6-c26255232370)~groupAccessType(public)~region(eu)"
+
 def find_proton_tools(filter_name=None):
     """Discover installed Proton versions on the system."""
     proton_dirs = set()
@@ -272,7 +288,32 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
                 "attempts": attempt
             }
 
-def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
+def launch_vrchat_in_desktop_test_mode(world_location=None):
+    """Launch VRChat in desktop mode with full debug/logging command line flags and join video test world."""
+    target_instance = world_location or DEFAULT_TEST_WORLD_LOCATION
+    launch_url = f"vrchat://launch?id={target_instance}"
+
+    print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN} [--try Mode] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
+    print(f" Target Instance : {target_instance}")
+    print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
+    print()
+
+    # Try launching via xdg-open protocol handler or bazzite-steam
+    try:
+        cmd = ["xdg-open", launch_url]
+        subprocess.run(cmd, check=True)
+        print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via xdg-open.{COLOR_RESET}")
+    except Exception:
+        try:
+            cmd = ["bazzite-steam", launch_url]
+            subprocess.run(cmd, check=True)
+            print(f"{COLOR_GREEN}[✓] Triggered VRChat launch via bazzite-steam.{COLOR_RESET}")
+        except Exception as e:
+            print(f"{COLOR_RED}[!] Failed to launch VRChat: {e}{COLOR_RESET}")
+
+def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None, try_launch=False):
     """Run diagnostic matrix tests across Proton versions and configuration flags."""
     proton_list = find_proton_tools(filter_name=tool_filter)
     prefix_dir = find_vrchat_prefix()
@@ -320,7 +361,6 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
         urls_to_test = DEFAULT_URLS.copy()
         urls_to_test["Local MP4"] = "C:\\sample.mp4"
 
-    # Environment Configurations (Testing WINEDLLOVERRIDES, GnuTLS, and Combinations)
     env_configs = [
         ("Full VRChat Env", {"WINEDLLOVERRIDES": "iyuv_32=", "G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
         ("GnuTLS Normal", {"G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
@@ -371,6 +411,9 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
     print(f"  WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding")
     print()
 
+    if try_launch:
+        launch_vrchat_in_desktop_test_mode()
+
     cleanup_artifacts_and_zombies()
 
 def main():
@@ -379,10 +422,11 @@ def main():
     parser.add_argument("--all", action="store_true", help="Run comprehensive matrix test suite across all Proton versions")
     parser.add_argument("--tool", type=str, help="Filter test to specific Proton tool name (e.g. RTSP)")
     parser.add_argument("--url", type=str, help="Test a specific video or stream URL")
+    parser.add_argument("--try", dest="try_launch", action="store_true", help="Launch VRChat in Desktop mode with full debug flags into video test world after benchmarking")
     parser.add_argument("--json", action="store_true", help="Output raw JSON results for automated tools")
     args = parser.parse_args()
 
-    run_matrix_test(quick_mode=args.quick or (not args.all and not args.tool), custom_url=args.url, tool_filter=args.tool)
+    run_matrix_test(quick_mode=args.quick or (not args.all and not args.tool), custom_url=args.url, tool_filter=args.tool, try_launch=args.try_launch)
 
 if __name__ == "__main__":
     main()
