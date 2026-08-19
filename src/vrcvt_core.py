@@ -94,7 +94,7 @@ def find_vrchat_prefix():
     return candidates[0]
 
 def cleanup_artifacts_and_zombies():
-    """Clean up temporary files and kill any lingering Wine/Proton zombie processes."""
+    """Clean up temporary files and kill any lingering Wine/Proton zombie processes/windows."""
     prefix_dir = find_vrchat_prefix()
     drive_c = os.path.join(prefix_dir, "pfx/drive_c")
     
@@ -114,7 +114,17 @@ def cleanup_artifacts_and_zombies():
             except Exception:
                 pass
                 
-    for proc in ["wineserver", "vrcvt_wmf_test.exe", "wmf_test.exe"]:
+    target_procs = [
+        "vrcvt_wmf_test.exe",
+        "wmf_test.exe",
+        "wineserver",
+        "explorer.exe",
+        "services.exe",
+        "plugplay.exe",
+        "svchost.exe",
+        "conhost.exe"
+    ]
+    for proc in target_procs:
         try:
             subprocess.run(["pkill", "-9", "-f", proc], capture_output=True, timeout=3)
         except Exception:
