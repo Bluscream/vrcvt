@@ -7,7 +7,7 @@ import glob
 import subprocess
 from pathlib import Path
 from typing import List, Optional
-from .models import ProtonTool
+from .models import ProtonTool, SteamContainerRuntime
 from .logger import logger
 
 class ProtonDiscovery:
@@ -95,3 +95,30 @@ class ProtonDiscovery:
             if c.is_file() and os.access(c, os.X_OK):
                 return c
         return None
+
+    @staticmethod
+    def find_all_container_runtimes() -> List[SteamContainerRuntime]:
+        """Discover all installed Steam Linux Runtime container environments on the system."""
+        runtimes: List[SteamContainerRuntime] = []
+        seen = set()
+
+        search_dirs = [
+            Path("/run/media/system/Data/Games/Steam/steamapps/common"),
+            Path.home() / ".local/share/Steam/steamapps/common",
+            Path.home() / ".steam/steam/steamapps/common",
+        ]
+
+        for base_dir in search_dirs:
+            if not base_dir.is_dir():
+                continue
+            for entry in base_dir.iterdir():
+                if entry.name.startswith("SteamLinuxRuntime"):
+                    run_bin = entry / "run"
+                    if run_bin.is_file() and os.access(run_bin, os.X_OK):
+                        if entry.name not in seen:
+                            seen.add(entry.name)
+                            runtimes.append(SteamContainerRuntime(name=entry.name, run_path=run_bin))
+
+        runtimes.sort(key=lambda r: r.name, reverse=True)
+        runtimes.append(SteamContainerRuntime(name="HostNative", run_path=None))
+        return runtimes

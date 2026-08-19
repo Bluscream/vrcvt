@@ -27,6 +27,12 @@ class ProtonTool:
     bin_path: Path
 
 @dataclass
+class SteamContainerRuntime:
+    """Represents a Steam Linux Runtime container runner environment (e.g. SteamLinuxRuntime_4, HostNative)."""
+    name: str
+    run_path: Optional[Path] = None
+
+@dataclass
 class StreamUrlTarget:
     """Represents a target stream URL with structured urllib.parse metadata."""
     raw_url: str
@@ -72,9 +78,10 @@ class BenchmarkResult:
 
 @dataclass
 class RankedCombination:
-    """Represents a scored (Proton, EnvVars) compatibility combination."""
+    """Represents a scored (Proton, ContainerRuntime, LaunchCmd) compatibility combination."""
     rank: int
     proton_name: str
+    runtime_name: str
     env_vars: Dict[str, str]
     env_str: str
     pass_count: int
@@ -86,6 +93,7 @@ class RankedCombination:
         return {
             "rank": self.rank,
             "proton_name": self.proton_name,
+            "runtime_name": self.runtime_name,
             "env_vars": self.env_vars,
             "env_str": self.env_str,
             "pass_rate": f"{self.pass_count}/{self.total_tests}",

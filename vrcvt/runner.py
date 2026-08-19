@@ -8,6 +8,7 @@ import time
 import subprocess
 import json
 import shutil
+import shlex
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from .config import Config
@@ -15,6 +16,32 @@ from .models import BenchmarkResult, ErrorClassification, StreamUrlTarget
 from .logger import logger
 
 from .discovery import ProtonDiscovery
+
+def parse_cmd_string(cmd_str: Optional[str]) -> Tuple[Dict[str, str], List[str]]:
+    """Parse a full Steam launch command line into (env_vars, cmd_args)."""
+    env_vars: Dict[str, str] = {}
+    cmd_args: List[str] = []
+    if not cmd_str or not cmd_str.strip():
+        return env_vars, cmd_args
+
+    tokens = shlex.split(cmd_str)
+    before_cmd = True
+
+    for token in tokens:
+        if token == "%command%":
+            before_cmd = False
+            continue
+        if before_cmd and "=" in token and not token.startswith("-"):
+            k, v = token.split("=", 1)
+            env_vars[k.strip()] = v.strip()
+        else:
+            if token.startswith("-") or not before_cmd:
+                cmd_args.append(token)
+            elif "=" in token:
+                k, v = token.split("=", 1)
+                env_vars[k.strip()] = v.strip()
+
+    return env_vars, cmd_args
 
 class URLResolver:
     """Resolves stream URLs using VRChat's bundled yt-dlp.exe or system yt-dlp."""
@@ -66,13 +93,15 @@ class VRCTestRunner:
         prefix_dir: Optional[Path] = None,
         env_vars: Optional[Dict[str, str]] = None,
         cmd_args: Optional[List[str]] = None,
-        wmf_exe: Optional[Path] = None
+        wmf_exe: Optional[Path] = None,
+        container_runner: Optional[Path | str] = None
     ):
         self.proton_bin = proton_bin
         self.prefix_dir = prefix_dir
         self.env_vars = env_vars or {}
         self.cmd_args = cmd_args or []
         self.wmf_exe = wmf_exe or Config.WMF_EXE
+        self.container_runner = container_runner
 
     def run_test(self, url: str, timeout: int = 10, retries: int = 1) -> BenchmarkResult:
         """Execute wmf_test.exe inside an isolated per-tool sandbox prefix."""
@@ -130,7 +159,13 @@ class VRCTestRunner:
                 pass
 
         target_url = "C:\\vrcvt_sample.mp4" if (url == "ASSET_LOCAL" or url == str(Config.SAMPLE_MP4)) else url
-        slr_runner = ProtonDiscovery.find_steam_linux_runtime()
+
+        if self.container_runner == "HostNative":
+            slr_runner = None
+        elif self.container_runner:
+            slr_runner = Path(self.container_runner)
+        else:
+            slr_runner = ProtonDiscovery.find_steam_linux_runtime()
 
         for attempt in range(1, retries + 1):
             start_t = time.time()
