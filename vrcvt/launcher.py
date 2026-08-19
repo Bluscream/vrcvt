@@ -1,108 +1,113 @@
 """
-VRCVideoTester (vrcvt) - VRChat Desktop Test Mode Launcher & Process Manager
+VRCVideoTester (vrcvt) - VRChat Desktop Mode Launcher & Process Manager
 """
 
-import os
 import sys
 import json
 import subprocess
 import atexit
-from .config import (
-    COLOR_RESET, COLOR_BOLD, COLOR_GREEN, COLOR_YELLOW, COLOR_CYAN,
-    DEFAULT_TEST_WORLD_ID, VRCHAT_DEBUG_ARGS
-)
-from .discovery import find_vrchat_prefix
+from pathlib import Path
+from typing import Optional
+from .config import Config
+from .models import RankedCombination
+from .discovery import ProtonDiscovery
+from .logger import logger
 
-def cleanup_artifacts_and_zombies():
-    """Clean up temporary files and kill any lingering Wine/Proton zombie processes/windows."""
-    prefix_dir = find_vrchat_prefix()
-    drive_c = os.path.join(prefix_dir, "pfx/drive_c")
-    
-    temp_files = [
-        os.path.join(drive_c, "vrcvt_wmf_test.exe"),
-        os.path.join(drive_c, "vrcvt_out.txt"),
-        os.path.join(drive_c, "vrcvt_out.json"),
-        os.path.join(drive_c, "sample.mp4"),
-        "/tmp/ytdlp_out.txt",
-        "/tmp/wmf_run.txt"
-    ]
-    
-    for f in temp_files:
-        if os.path.exists(f):
+class VRCLauncher:
+    """Manages VRChat desktop mode launching and process cleanup."""
+
+    @staticmethod
+    def cleanup_artifacts_and_zombies() -> None:
+        """Clean up temporary files and kill lingering Wine/Proton zombie processes."""
+        prefix_dir = ProtonDiscovery.find_vrchat_prefix()
+        drive_c = prefix_dir / "pfx/drive_c"
+
+        temp_files = [
+            drive_c / "vrcvt_wmf_test.exe",
+            drive_c / "vrcvt_out.txt",
+            drive_c / "vrcvt_out.json",
+            drive_c / "sample.mp4",
+            Path("/tmp/ytdlp_out.txt"),
+            Path("/tmp/wmf_run.txt")
+        ]
+
+        for f in temp_files:
+            if f.exists():
+                try:
+                    f.unlink()
+                except Exception:
+                    pass
+
+        target_procs = [
+            "vrcvt_wmf_test.exe",
+            "wmf_test.exe",
+            "wineserver",
+            "explorer.exe",
+            "services.exe",
+            "plugplay.exe",
+            "svchost.exe",
+            "conhost.exe"
+        ]
+        for proc in target_procs:
             try:
-                os.remove(f)
+                subprocess.run(["pkill", "-9", "-f", proc], capture_output=True, timeout=3)
             except Exception:
                 pass
-                
-    target_procs = [
-        "vrcvt_wmf_test.exe",
-        "wmf_test.exe",
-        "wineserver",
-        "explorer.exe",
-        "services.exe",
-        "plugplay.exe",
-        "svchost.exe",
-        "conhost.exe"
-    ]
-    for proc in target_procs:
-        try:
-            subprocess.run(["pkill", "-9", "-f", proc], capture_output=True, timeout=3)
-        except Exception:
-            pass
 
-atexit.register(cleanup_artifacts_and_zombies)
+    @classmethod
+    def launch(
+        cls,
+        world_id: Optional[str] = None,
+        target_rank: int = 1,
+        best_config: Optional[RankedCombination] = None
+    ) -> bool:
+        """Launch VRChat in 4:3 desktop mode using target ranking from results.json."""
+        target_world_id = world_id or Config.DEFAULT_TEST_WORLD_ID
+        vrc_launch_uri = f"vrchat://launch?id={target_world_id}"
 
-def launch_vrchat_in_desktop_test_mode(world_id=None, target_rank=1, best_config=None):
-    """Launch VRChat in desktop mode using target ranking from results.json."""
-    target_world_id = world_id or DEFAULT_TEST_WORLD_ID
-    vrc_launch_uri = f"vrchat://launch?id={target_world_id}"
-
-    # Try loading target rank configuration from results.json
-    selected_config = best_config
-    if not selected_config:
-        package_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(package_dir)
-        results_file = os.path.join(project_root, "results.json")
-        if os.path.isfile(results_file):
+        selected_config: Optional[Dict] = best_config.to_dict() if best_config else None
+        if not selected_config and Config.RESULTS_JSON.is_file():
             try:
-                with open(results_file, "r") as f:
-                    data = json.load(f)
-                rankings = data.get("rankings", [])
-                for r in rankings:
+                data = json.loads(Config.RESULTS_JSON.read_text(encoding="utf-8"))
+                for r in data.get("rankings", []):
                     if r.get("rank") == target_rank:
                         selected_config = r
                         break
             except Exception:
                 pass
 
-    # Kill any lingering zombie/reaper processes from prior runs that lock Steam AppId 438100
-    try:
-        subprocess.run(["pkill", "-f", "reaper SteamLaunch AppId=438100"], capture_output=True)
-        subprocess.run(["pkill", "-f", "VRChat.exe"], capture_output=True)
-    except Exception:
-        pass
-
-    print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-    print(f"{COLOR_BOLD}{COLOR_CYAN} [--try #{target_rank}] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
-    print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-    print(f" Target World ID : {target_world_id}")
-    print(f" Selected Rank   : #{target_rank}")
-    if selected_config:
-        print(f" Proton Tool     : {COLOR_YELLOW}{selected_config.get('proton_name', 'Default')}{COLOR_RESET}")
-        print(f" Env Config      : {COLOR_GREEN}{selected_config.get('env_str', 'Default')}{COLOR_RESET}")
-        print(f" Launch Command  : {selected_config.get('launch_cmd', '')}")
-    print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
-    print()
-
-    # Launch directly via Steam URI protocol / bazzite-steam applaunch with explicit --desktop flag
-    try:
-        cmd = ["bazzite-steam", "-applaunch", "438100", "--desktop", f"--watch-world={target_world_id}"]
-        subprocess.run(cmd, check=True)
-        print(f"{COLOR_GREEN}[✓] Triggered VRChat desktop launch via bazzite-steam -applaunch.{COLOR_RESET}")
-    except Exception:
+        # Kill lingering reaper/VRChat processes
         try:
-            cmd = ["steam", f"steam://rungameid/438100//{vrc_launch_uri}"]
+            subprocess.run(["pkill", "-f", "reaper SteamLaunch AppId=438100"], capture_output=True)
+            subprocess.run(["pkill", "-f", "VRChat.exe"], capture_output=True)
+        except Exception:
+            pass
+
+        logger.info("\n========================================================================")
+        logger.info(f" [--try #{target_rank}] Launching VRChat in Desktop Mode for Debug Log Scraping")
+        logger.info("========================================================================")
+        logger.info(f" Target World ID : {target_world_id}")
+        logger.info(f" Selected Rank   : #{target_rank}")
+        if selected_config:
+            logger.info(f" Proton Tool     : {selected_config.get('proton_name', 'Default')}")
+            logger.info(f" Env Config      : {selected_config.get('env_str', 'Default')}")
+            logger.info(f" Launch Command  : {selected_config.get('launch_cmd', '')}")
+        logger.info(f" Debug Args      : {' '.join(Config.VRCHAT_DEBUG_ARGS)}\n")
+
+        # Launch via bazzite-steam applaunch or steam:// protocol
+        try:
+            cmd = ["bazzite-steam", "-applaunch", "438100", "--desktop", f"--watch-world={target_world_id}"]
             subprocess.run(cmd, check=True)
-            print(f"{COLOR_GREEN}[✓] Triggered VRChat desktop launch via steam:// protocol.{COLOR_RESET}")
-        except Exception as e:
-            print(f"{COLOR_RED}[!] Failed to launch VRChat via Steam: {e}{COLOR_RESET}")
+            logger.success("Triggered VRChat desktop launch via bazzite-steam -applaunch.")
+            return True
+        except Exception:
+            try:
+                cmd = ["steam", f"steam://rungameid/438100//{vrc_launch_uri}"]
+                subprocess.run(cmd, check=True)
+                logger.success("Triggered VRChat desktop launch via steam:// protocol.")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to launch VRChat via Steam: {e}")
+                return False
+
+atexit.register(VRCLauncher.cleanup_artifacts_and_zombies)

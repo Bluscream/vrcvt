@@ -3,18 +3,21 @@ VRCVideoTester (vrcvt) - Command Line Interface (CLI) Entrypoint
 """
 
 import sys
-import os
 import argparse
 import json
-from .config import DEFAULT_TEST_WORLD_ID, COLOR_RESET, COLOR_BOLD, COLOR_GREEN, COLOR_YELLOW, COLOR_RED, COLOR_CYAN
-from .discovery import find_proton_tools, find_vrchat_prefix
+from pathlib import Path
+from typing import Dict, List, Optional
+
+from .config import Config
+from .discovery import ProtonDiscovery
 from .runner import VRCTestRunner
 from .suite import VRCBenchmarkSuite
-from .launcher import launch_vrchat_in_desktop_test_mode
+from .launcher import VRCLauncher
+from .logger import logger
 
-def parse_env_args(env_list):
+def parse_env_args(env_list: Optional[List[str]]) -> Dict[str, str]:
     """Parse list of KEY=VAL environment variable strings into a dict."""
-    env_vars = {}
+    env_vars: Dict[str, str] = {}
     if not env_list:
         return env_vars
     for item in env_list:
@@ -24,9 +27,9 @@ def parse_env_args(env_list):
                 env_vars[k.strip()] = v.strip()
     return env_vars
 
-def parse_cmd_args(args_list):
+def parse_cmd_args(args_list: Optional[List[str]]) -> List[str]:
     """Parse list of command line argument strings into a list of flags."""
-    cmd_args = []
+    cmd_args: List[str] = []
     if not args_list:
         return cmd_args
     for item in args_list:
@@ -35,7 +38,7 @@ def parse_cmd_args(args_list):
                 cmd_args.append(token.strip())
     return cmd_args
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="VRCVideoTester (vrcvt) - VRChat Video Player Compatibility Tester",
         formatter_class=argparse.RawTextHelpFormatter
@@ -92,29 +95,30 @@ def main():
     try_val = getattr(args, "try")
     if args.no_tests:
         target_rank = try_val if try_val is not None else 1
-        launch_vrchat_in_desktop_test_mode(DEFAULT_TEST_WORLD_ID, target_rank=target_rank)
+        VRCLauncher.launch(Config.DEFAULT_TEST_WORLD_ID, target_rank=target_rank)
         sys.exit(0)
 
     # --single mode: Run a single stream test with custom tool, env, and URL
     if args.single:
-        proton_tools = find_proton_tools()
-        prefix_dir = find_vrchat_prefix()
+        proton_tools = ProtonDiscovery.find_proton_tools()
+        prefix_dir = ProtonDiscovery.find_vrchat_prefix()
 
-        selected_proton_bin = None
+        selected_proton_bin: Optional[Path] = None
         selected_tool_name = "Default System Proton"
 
         if args.tool:
-            for name, path, bin_path in proton_tools:
-                if args.tool.lower() in name.lower() or args.tool == path or args.tool == bin_path:
-                    selected_proton_bin = bin_path
-                    selected_tool_name = name
+            for tool in proton_tools:
+                if args.tool.lower() in tool.name.lower() or args.tool == str(tool.path) or args.tool == str(tool.bin_path):
+                    selected_proton_bin = tool.bin_path
+                    selected_tool_name = tool.name
                     break
-            if not selected_proton_bin and os.path.isfile(args.tool):
-                selected_proton_bin = args.tool
-                selected_tool_name = os.path.basename(args.tool)
+            if not selected_proton_bin and Path(args.tool).is_file():
+                selected_proton_bin = Path(args.tool)
+                selected_tool_name = selected_proton_bin.name
 
         if not selected_proton_bin and proton_tools:
-            selected_tool_name, _, selected_proton_bin = proton_tools[0]
+            selected_tool_name = proton_tools[0].name
+            selected_proton_bin = proton_tools[0].bin_path
 
         env_vars = parse_env_args(args.env)
         cmd_args = parse_cmd_args(args.args)
@@ -124,23 +128,24 @@ def main():
         result = runner.run_test(test_url, timeout=10, retries=1)
 
         if args.json:
-            print(json.dumps(result, indent=2))
+            print(json.dumps(result.to_dict(), indent=2))
         else:
-            print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-            print(f"{COLOR_BOLD}{COLOR_CYAN} VRCVideoTester (vrcvt) - Single Test Execution Result{COLOR_RESET}")
-            print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-            print(f" Proton Tool : {COLOR_YELLOW}{selected_tool_name}{COLOR_RESET}")
-            print(f" Target URL  : {test_url}")
-            print(f" Env Vars    : {env_vars}")
-            print(f" Cmd Args    : {cmd_args}")
-            status_str = f"{COLOR_GREEN}PASS{COLOR_RESET}" if result['success'] else f"{COLOR_RED}FAIL{COLOR_RESET}"
-            print(f" Result      : {status_str} (Latency: {result['elapsed_ms']:.1f}ms | HRESULT: {result['hresult']})")
-            if not result['success']:
-                print(f" Error Type  : {result.get('error_type')}")
-                print(f" Solution    : {result.get('solution')}")
-            print()
+            logger.info("\n========================================================================")
+            logger.info(" VRCVideoTester (vrcvt) - Single Test Execution Result")
+            logger.info("========================================================================")
+            logger.info(f" Proton Tool : {selected_tool_name}")
+            logger.info(f" Target URL  : {test_url}")
+            logger.info(f" Env Vars    : {env_vars}")
+            logger.info(f" Cmd Args    : {cmd_args}")
+            if result.success:
+                logger.success(f"Result      : PASS (Latency: {result.elapsed_ms:.1f}ms | HRESULT: {result.hresult})")
+            else:
+                logger.error(f"Result      : FAIL (Latency: {result.elapsed_ms:.1f}ms | HRESULT: {result.hresult})")
+                logger.error(f" Error Type  : {result.error_type}")
+                logger.error(f" Solution    : {result.solution}")
+            logger.info("")
 
-        sys.exit(0 if result['success'] else 1)
+        sys.exit(0 if result.success else 1)
 
     # Standard / --try benchmark matrix execution
     suite = VRCBenchmarkSuite(custom_url=args.url)
