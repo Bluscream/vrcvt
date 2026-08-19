@@ -34,7 +34,7 @@ DEFAULT_URLS = {
     "HTTPS Direct MP4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
 }
 
-# VRChat yt-dlp Standard Parameters (Default does NOT pass --no-check-certificates)
+# VRChat yt-dlp Standard Parameters
 VRCHAT_USER_AGENT = "VRChat/2024.3.2"
 YTDLP_VRCHAT_ARGS_DEFAULT = [
     "--user-agent", VRCHAT_USER_AGENT,
@@ -98,7 +98,6 @@ def cleanup_artifacts_and_zombies():
             except Exception:
                 pass
                 
-    # Kill wineserver and leftover test processes
     for proc in ["wineserver", "vrcvt_wmf_test.exe", "wmf_test.exe"]:
         try:
             subprocess.run(["pkill", "-9", "-f", proc], capture_output=True, timeout=3)
@@ -108,13 +107,12 @@ def cleanup_artifacts_and_zombies():
 atexit.register(cleanup_artifacts_and_zombies)
 
 def resolve_url_ytdlp(proton_bin, prefix_dir, url):
-    """Resolve video URL using VRChat's yt-dlp.exe. Tests default cert verification first, then --no-check-certificates if SSL fails."""
+    """Resolve video URL using VRChat's yt-dlp.exe."""
     if url.startswith("ASSET_LOCAL") or os.path.exists(url) or url.startswith("C:\\"):
         return url, 0.0, 1, None, False
 
     ytdlp_exe = os.path.join(prefix_dir, "pfx/drive_c/users/steamuser/AppData/LocalLow/VRChat/VRChat/Tools/yt-dlp.exe")
     
-    # Test 1: Standard VRChat call WITHOUT --no-check-certificates
     start_t = time.time()
     try:
         if os.path.isfile(ytdlp_exe):
@@ -138,7 +136,7 @@ def resolve_url_ytdlp(proton_bin, prefix_dir, url):
         elapsed_ms = (time.time() - start_t) * 1000.0
         error_msg = str(e)
 
-    # Test 2: If Test 1 failed with SSL/Cert error, retry WITH --no-check-certificates
+    # SSL Certificate Fallback Retry
     is_ssl_err = "SSL" in error_msg or "CERTIFICATE_VERIFY_FAILED" in error_msg or "certificate" in error_msg.lower()
     if is_ssl_err:
         start_t_retry = time.time()
@@ -173,7 +171,6 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     env.update(env_vars)
 
     c_wmf = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_wmf_test.exe")
-    out_txt = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_out.txt")
     try:
         shutil.copy2(wmf_exe, c_wmf)
     except Exception:
@@ -285,7 +282,6 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
     wmf_exe = os.path.join(project_root, "assets/wmf_test.exe")
     local_mp4 = os.path.join(project_root, "assets/sample.mp4")
 
-    # Copy local_mp4 to C:\sample.mp4 in prefix for WMF testing
     c_sample = os.path.join(prefix_dir, "pfx/drive_c/sample.mp4")
     if os.path.isfile(local_mp4):
         try:
@@ -324,8 +320,11 @@ def run_matrix_test(quick_mode=False, custom_url=None, tool_filter=None):
         urls_to_test = DEFAULT_URLS.copy()
         urls_to_test["Local MP4"] = "C:\\sample.mp4"
 
+    # Environment Configurations (Testing WINEDLLOVERRIDES, GnuTLS, and Combinations)
     env_configs = [
+        ("Full VRChat Env", {"WINEDLLOVERRIDES": "iyuv_32=", "G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
         ("GnuTLS Normal", {"G_TLS_GNUTLS_PRIORITY": "NORMAL"}),
+        ("IYUV Override", {"WINEDLLOVERRIDES": "iyuv_32="}),
         ("Default (Unset)", {})
     ]
 
