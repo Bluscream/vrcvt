@@ -140,9 +140,6 @@ class VRCTestRunner:
         env.update(self.env_vars)
         env["WINEDLLOVERRIDES"] = override_base
 
-        if "G_TLS_GNUTLS_PRIORITY" not in env:
-            env["G_TLS_GNUTLS_PRIORITY"] = "NORMAL"
-
         env["SSL_CERT_DIR"] = "/etc/ssl/certs"
         env["SSL_CERT_FILE"] = "/etc/ssl/certs/ca-certificates.crt"
 
