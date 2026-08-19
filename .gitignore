@@ -1,6 +1,17 @@
 *.log
 *.tmp
+*.json
 __pycache__/
 .idea/
 .vscode/
 /tmp/
+
+# Harness temporary build artifacts and logs
+harness/Library/
+harness/Logs/
+harness/UserSettings/
+harness/mono_crash.*.blob
+harness/Builds/*.json
+harness/Builds/*.log
+results.json
+vrcvt.log

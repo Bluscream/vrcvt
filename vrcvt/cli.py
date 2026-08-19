@@ -31,9 +31,18 @@ def main() -> None:
         help="Specify or filter Proton compatibility tools (e.g. 'GE-Proton9-25', 'Proton-GE RTSP Latest')"
     )
     parser.add_argument(
+        "--runtime",
         "--env",
+        dest="runtime",
         type=str,
         help="Specify or filter Steam Linux Runtime container environment (e.g. 'SteamLinuxRuntime_4', 'SteamLinuxRuntime_sniper', 'HostNative')"
+    )
+    parser.add_argument(
+        "--harness",
+        type=str,
+        default="unity",
+        choices=["unity", "wmf"],
+        help="Select video test harness backend binary: 'unity' (VRChatVideoTester.exe, default) or 'wmf' (wmf_test.exe)"
     )
     parser.add_argument(
         "--cmd",
@@ -98,21 +107,23 @@ def main() -> None:
 
         selected_runtime: Optional[Path | str] = None
         selected_runtime_name = "Auto-detected Container"
-        if args.env:
+        if args.runtime:
             for r in container_runtimes:
-                if args.env.lower() in r.name.lower():
+                if args.runtime.lower() in r.name.lower():
                     selected_runtime = r.run_path if r.name != "HostNative" else "HostNative"
                     selected_runtime_name = r.name
                     break
 
         env_vars, cmd_args = parse_cmd_string(args.cmd)
         test_url = args.url or "https://media.w3.org/2010/05/sintel/trailer.mp4"
+        harness_bin = Config.get_harness_exe(args.harness)
 
         runner = VRCTestRunner(
             proton_bin=selected_proton_bin,
             prefix_dir=prefix_dir,
             env_vars=env_vars,
             cmd_args=cmd_args,
+            wmf_exe=harness_bin,
             container_runner=selected_runtime
         )
         result = runner.run_test(test_url, timeout=20, retries=1)
@@ -125,6 +136,7 @@ def main() -> None:
             logger.info("========================================================================")
             logger.info(f" Proton Tool : {selected_tool_name}")
             logger.info(f" Runtime     : {selected_runtime_name}")
+            logger.info(f" Harness     : {args.harness} ({harness_bin.name})")
             logger.info(f" Target URL  : {test_url}")
             logger.info(f" Env Vars    : {env_vars}")
             logger.info(f" Cmd Args    : {cmd_args}")
@@ -147,7 +159,7 @@ def main() -> None:
         auto_try=auto_try,
         target_rank=target_rank,
         tool_filter=args.tool,
-        env_filter=args.env,
+        env_filter=args.runtime,
         cmd_filter=args.cmd,
         url_filter=args.url
     )

@@ -14,10 +14,21 @@ class Config:
     ASSETS_DIR: Path = PROJECT_ROOT / "assets"
     
     # Binary Artifact Paths
-    WMF_EXE: Path = ASSETS_DIR / "wmf_test.exe"
+    HARNESS_DIR: Path = PROJECT_ROOT / "harness"
+    UNITY_HARNESS_EXE: Path = HARNESS_DIR / "Builds" / "VRChatVideoTester.exe"
+    WMF_TEST_EXE: Path = ASSETS_DIR / "wmf_test.exe"
+    WMF_EXE: Path = UNITY_HARNESS_EXE if UNITY_HARNESS_EXE.is_file() else WMF_TEST_EXE
     SAMPLE_MP4: Path = ASSETS_DIR / "sample.mp4"
     RESULTS_JSON: Path = PROJECT_ROOT / "results.json"
     LOG_FILE: Path = PROJECT_ROOT / "vrcvt.log"
+
+    @classmethod
+    def get_harness_exe(cls, harness_type: str = "unity") -> Path:
+        if harness_type.lower() in ("wmf", "wmf_test"):
+            return cls.WMF_TEST_EXE
+        if cls.UNITY_HARNESS_EXE.is_file():
+            return cls.UNITY_HARNESS_EXE
+        return cls.WMF_TEST_EXE
 
     # Default Sample Video Test URLs
     DEFAULT_URLS: Dict[str, str] = {

@@ -100,7 +100,7 @@ class VRCTestRunner:
         self.prefix_dir = prefix_dir
         self.env_vars = env_vars or {}
         self.cmd_args = cmd_args or []
-        self.wmf_exe = wmf_exe or Config.WMF_EXE
+        self.wmf_exe = wmf_exe or (Config.UNITY_HARNESS_EXE if Config.UNITY_HARNESS_EXE.is_file() else Config.WMF_EXE)
         self.container_runner = container_runner
 
     def run_test(self, url: str, timeout: int = 10, retries: int = 1) -> BenchmarkResult:
@@ -129,8 +129,9 @@ class VRCTestRunner:
         sandbox_prefix.mkdir(parents=True, exist_ok=True)
 
         env = os.environ.copy()
+        target_prefix = self.prefix_dir if (self.prefix_dir and (self.prefix_dir / "pfx").is_dir()) else sandbox_prefix
         env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / ".local/share/Steam")
-        env["STEAM_COMPAT_DATA_PATH"] = str(sandbox_prefix)
+        env["STEAM_COMPAT_DATA_PATH"] = str(target_prefix)
         env["WINEDEBUG"] = "-all"
 
         override_base = "winemenubuilder.exe=d;conhost.exe=d"
@@ -143,13 +144,25 @@ class VRCTestRunner:
         env["SSL_CERT_DIR"] = "/etc/ssl/certs"
         env["SSL_CERT_FILE"] = "/etc/ssl/certs/ca-certificates.crt"
 
-        c_wmf = sandbox_prefix / "pfx/drive_c/vrcvt_wmf_test.exe"
-        c_sample = sandbox_prefix / "pfx/drive_c/vrcvt_sample.mp4"
-        c_result_json = sandbox_prefix / "pfx/drive_c/vrcvt_result.json"
+        c_wmf = target_prefix / "pfx/drive_c/vrcvt_wmf_test.exe"
+        c_sample = target_prefix / "pfx/drive_c/vrcvt_sample.mp4"
+        c_result_json = target_prefix / "pfx/drive_c/vrcvt_result.json"
 
-        try: # DO NOT EVER TRY BYPASSING DIRECTLY GETTING STREAMS FROM URL, THIS NEEDS TO BE FIXED RATHER THAN WORKED AROUND
+        try:
             c_wmf.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(self.wmf_exe, c_wmf)
+            if "VRChatVideoTester" in self.wmf_exe.name:
+                c_wmf = target_prefix / "pfx/drive_c/VRChatVideoTester.exe"
+                c_result_json = target_prefix / "pfx/drive_c/VRCVideoTestResult.json"
+                for item in self.wmf_exe.parent.iterdir():
+                    dst = c_wmf.parent / item.name
+                    if item.is_dir():
+                        if not dst.exists():
+                            shutil.copytree(item, dst)
+                    else:
+                        shutil.copy2(item, dst)
+            else:
+                shutil.copy2(self.wmf_exe, c_wmf)
+
             if Config.SAMPLE_MP4.is_file():
                 shutil.copy2(Config.SAMPLE_MP4, c_sample)
         except Exception:
@@ -171,13 +184,20 @@ class VRCTestRunner:
             proton_name = self.proton_bin.parent.name if (self.proton_bin and self.proton_bin.name == "proton") else (self.proton_bin.name if self.proton_bin else None)
             slr_runner = ProtonDiscovery.find_steam_linux_runtime(proton_name)
 
+        is_unity_harness = "VRChatVideoTester.exe" in str(self.wmf_exe)
+
         for attempt in range(1, retries + 1):
             start_t = time.time()
             try:
-                if slr_runner:
-                    cmd = [str(slr_runner), "--", str(self.proton_bin), "run", str(c_wmf), target_url] + self.cmd_args
+                if is_unity_harness:
+                    test_args = ["--url", target_url, "-outJson", str(c_result_json)] + self.cmd_args
                 else:
-                    cmd = [str(self.proton_bin), "run", str(c_wmf), target_url] + self.cmd_args
+                    test_args = [target_url] + self.cmd_args
+
+                if slr_runner:
+                    cmd = [str(slr_runner), "--", str(self.proton_bin), "run", str(c_wmf)] + test_args
+                else:
+                    cmd = [str(self.proton_bin), "run", str(c_wmf)] + test_args
                 res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
                 elapsed_ms = (time.time() - start_t) * 1000.0
 
@@ -203,10 +223,18 @@ class VRCTestRunner:
                         except Exception:
                             pass
 
-                if (json_data and json_data.get("resolver_success") and json_data.get("reader_success")) or res.returncode == 0:
+                is_success = False
+                if json_data:
+                    if json_data.get("success") is True:
+                        is_success = True
+                    elif json_data.get("resolver_success") and json_data.get("reader_success"):
+                        is_success = True
+
+                if is_success or res.returncode == 0:
+                    exec_ms = json_data.get("total_latency_ms", json_data.get("total_ms", elapsed_ms)) if json_data else elapsed_ms
                     return BenchmarkResult(
                         success=True,
-                        elapsed_ms=json_data.get("total_ms", elapsed_ms) if json_data else elapsed_ms,
+                        elapsed_ms=exec_ms,
                         hresult=json_data.get("resolver_hresult", "0x00000000") if json_data else "0x00000000",
                         solution="Working correctly",
                         attempts=attempt
