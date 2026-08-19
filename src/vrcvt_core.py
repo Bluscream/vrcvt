@@ -200,7 +200,10 @@ def resolve_url_ytdlp(proton_bin, prefix_dir, url):
     return url, elapsed_ms, 1, error_msg[:100], False
 
 def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
-    """Run wmf_test.exe inside Proton prefix and capture timing, HRESULTs, and diagnostic errors."""
+    """Run wmf_test.exe inside an isolated test prefix to capture timing and HRESULTs without modifying VRChat prefix data."""
+    sandbox_prefix = "/tmp/vrcvt_sandbox_prefix"
+    os.makedirs(sandbox_prefix, exist_ok=True)
+
     if not os.path.isfile(wmf_exe):
         return {
             "success": False,
@@ -212,7 +215,7 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
 
     env = os.environ.copy()
     env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = os.path.expanduser("~/.local/share/Steam")
-    env["STEAM_COMPAT_DATA_PATH"] = prefix_dir
+    env["STEAM_COMPAT_DATA_PATH"] = sandbox_prefix
     env["WINEDEBUG"] = "-all"
     
     # Merge WINEDLLOVERRIDES to disable conhost and winemenubuilder window creation
@@ -223,8 +226,9 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
     env.update(env_vars)
     env["WINEDLLOVERRIDES"] = override_base
 
-    c_wmf = os.path.join(prefix_dir, "pfx/drive_c/vrcvt_wmf_test.exe")
+    c_wmf = os.path.join(sandbox_prefix, "pfx/drive_c/vrcvt_wmf_test.exe")
     try:
+        os.makedirs(os.path.dirname(c_wmf), exist_ok=True)
         shutil.copy2(wmf_exe, c_wmf)
     except Exception:
         pass
