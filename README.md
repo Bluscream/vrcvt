@@ -53,8 +53,8 @@ cd vrcvt
 ./bin/vrcvt --try 2
 ./bin/vrcvt --no-tests --try 3
 
-# Run a single compatibility test with custom Proton tool and environment variables
-./bin/vrcvt --single --tool "Proton-GE RTSP Latest" --env "WINEDLLOVERRIDES=iyuv_32=" --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+# Run a single compatibility test with custom Proton tool, environment variables, and launch flags
+./bin/vrcvt --single --tool "Proton-GE RTSP Latest" --env "WINEDLLOVERRIDES=iyuv_32=" --args "--enable-avpro-in-proton" --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 # Skip benchmark tests and launch VRChat directly in Desktop Debug Mode
 ./bin/vrcvt --no-tests
@@ -73,6 +73,7 @@ cd vrcvt
 | `--single` | Run a single stream compatibility test instead of the full diagnostic matrix |
 | `--tool <NAME>` | Specify a target Proton tool name or path (e.g. `'Proton-GE RTSP Latest'`, `'GE-Proton9-25'`) |
 | `--env <KEY=VAL>` | Pass custom environment variables (e.g. `--env WINEDLLOVERRIDES=iyuv_32= --env G_TLS_GNUTLS_PRIORITY=NORMAL`) |
+| `--args <FLAGS>` | Pass custom launch flags / parameters to Proton / test harness (e.g. `--args --enable-avpro-in-proton`) |
 | `--try [RANK]` | Launch VRChat in 1024x768 (4:3) Desktop Debug mode into test world (`wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1`) using target ranking (e.g. `--try 1`, `--try 2`, `--try 3`) |
 | `--no-tests` | Skip the benchmark testing phase and trigger direct `--try` VRChat desktop launch immediately |
 | `--url <URL>` | Benchmark a specific custom stream or video URL |

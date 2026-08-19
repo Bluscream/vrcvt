@@ -24,6 +24,17 @@ def parse_env_args(env_list):
                 env_vars[k.strip()] = v.strip()
     return env_vars
 
+def parse_cmd_args(args_list):
+    """Parse list of command line argument strings into a list of flags."""
+    cmd_args = []
+    if not args_list:
+        return cmd_args
+    for item in args_list:
+        for token in item.split():
+            if token.strip():
+                cmd_args.append(token.strip())
+    return cmd_args
+
 def main():
     parser = argparse.ArgumentParser(
         description="VRCVideoTester (vrcvt) - VRChat Video Player Compatibility Tester",
@@ -44,6 +55,12 @@ def main():
         action="append",
         type=str,
         help="Custom environment variable(s) (e.g. --env WINEDLLOVERRIDES=iyuv_32= --env G_TLS_GNUTLS_PRIORITY=NORMAL)"
+    )
+    parser.add_argument(
+        "--args",
+        action="append",
+        type=str,
+        help="Custom command line argument(s) passed to harness / Proton (e.g. --args --enable-avpro-in-proton)"
     )
     parser.add_argument(
         "--try",
@@ -100,9 +117,10 @@ def main():
             selected_tool_name, _, selected_proton_bin = proton_tools[0]
 
         env_vars = parse_env_args(args.env)
+        cmd_args = parse_cmd_args(args.args)
         test_url = args.url or "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
 
-        runner = VRCTestRunner(proton_bin=selected_proton_bin, prefix_dir=prefix_dir, env_vars=env_vars)
+        runner = VRCTestRunner(proton_bin=selected_proton_bin, prefix_dir=prefix_dir, env_vars=env_vars, cmd_args=cmd_args)
         result = runner.run_test(test_url, timeout=10, retries=1)
 
         if args.json:
@@ -114,6 +132,7 @@ def main():
             print(f" Proton Tool : {COLOR_YELLOW}{selected_tool_name}{COLOR_RESET}")
             print(f" Target URL  : {test_url}")
             print(f" Env Vars    : {env_vars}")
+            print(f" Cmd Args    : {cmd_args}")
             status_str = f"{COLOR_GREEN}PASS{COLOR_RESET}" if result['success'] else f"{COLOR_RED}FAIL{COLOR_RESET}"
             print(f" Result      : {status_str} (Latency: {result['elapsed_ms']:.1f}ms | HRESULT: {result['hresult']})")
             if not result['success']:
