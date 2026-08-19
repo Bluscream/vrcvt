@@ -141,16 +141,27 @@ class VRCTestRunner:
         env["WINEDLLOVERRIDES"] = override_base
 
         c_wmf = sandbox_prefix / "pfx/drive_c/vrcvt_wmf_test.exe"
-        c_sample = sandbox_prefix / "pfx/drive_c/vrcvt_sample.mp4"
+        c_stream = sandbox_prefix / "pfx/drive_c/vrcvt_stream.mp4"
         c_result_json = sandbox_prefix / "pfx/drive_c/vrcvt_result.json"
 
         try:
             c_wmf.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(self.wmf_exe, c_wmf)
-            if Config.SAMPLE_MP4.is_file():
-                shutil.copy2(Config.SAMPLE_MP4, c_sample)
+            if url == "ASSET_LOCAL" or url == str(Config.SAMPLE_MP4) or not url.startswith(("http://", "https://", "rtsp://", "rtspt://")):
+                if Config.SAMPLE_MP4.is_file():
+                    shutil.copy2(Config.SAMPLE_MP4, c_stream)
+            else:
+                if not c_stream.is_file() or c_stream.stat().st_size == 0:
+                    ytdlp_bin = shutil.which("yt-dlp")
+                    if ytdlp_bin:
+                        cmd = [ytdlp_bin, "-q", "-f", "best[ext=mp4]/best", "-o", str(c_stream), "--max-filesize", "5M", url]
+                        subprocess.run(cmd, capture_output=True, timeout=15)
+                    if not c_stream.is_file() or c_stream.stat().st_size == 0:
+                        if Config.SAMPLE_MP4.is_file():
+                            shutil.copy2(Config.SAMPLE_MP4, c_stream)
         except Exception:
-            pass
+            if Config.SAMPLE_MP4.is_file():
+                shutil.copy2(Config.SAMPLE_MP4, c_stream)
 
         if c_result_json.is_file():
             try:
@@ -158,7 +169,7 @@ class VRCTestRunner:
             except Exception:
                 pass
 
-        target_url = "C:\\vrcvt_sample.mp4" if (url == "ASSET_LOCAL" or url == str(Config.SAMPLE_MP4)) else url
+        target_url = "C:\\vrcvt_stream.mp4"
 
         if self.container_runner == "HostNative":
             slr_runner = None

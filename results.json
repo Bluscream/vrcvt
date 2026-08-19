@@ -1,21 +1,9 @@
 {
-  "generated_at": "2026-08-19 22:29:18",
-  "suite_runtime_seconds": 41.21,
+  "generated_at": "2026-08-19 22:55:47",
+  "suite_runtime_seconds": 41.95,
   "rankings": [
     {
       "rank": 1,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {
-        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
-      },
-      "env_str": "G_TLS_GNUTLS_PRIORITY=NORMAL",
-      "pass_rate": "2/2",
-      "avg_ms": 4093.4,
-      "launch_cmd": "G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
-    },
-    {
-      "rank": 2,
       "proton_name": "GE-Proton9-25",
       "runtime_name": "SteamLinuxRuntime_4",
       "env_vars": {
@@ -25,44 +13,9 @@
         "PRESSURE_VESSEL_FILESYSTEMS_RW": "/var/lib/flatpak/app/io.github.wivrn.wivrn"
       },
       "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn",
-      "pass_rate": "2/2",
-      "avg_ms": 4103.3,
+      "pass_rate": "6/6",
+      "avg_ms": 4197.3,
       "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn %command% --enable-hw-video-decoding --enable-avpro-in-proton"
-    },
-    {
-      "rank": 3,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {},
-      "env_str": "",
-      "pass_rate": "2/2",
-      "avg_ms": 4114.5,
-      "launch_cmd": "%command% --enable-avpro-in-proton --disable-hw-video-decoding"
-    },
-    {
-      "rank": 4,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {
-        "WINEDLLOVERRIDES": "iyuv_32="
-      },
-      "env_str": "WINEDLLOVERRIDES=iyuv_32=",
-      "pass_rate": "2/2",
-      "avg_ms": 4115.3,
-      "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" %command% --enable-avpro-in-proton --disable-hw-video-decoding"
-    },
-    {
-      "rank": 5,
-      "proton_name": "GE-Proton9-25",
-      "runtime_name": "SteamLinuxRuntime_4",
-      "env_vars": {
-        "WINEDLLOVERRIDES": "iyuv_32=",
-        "G_TLS_GNUTLS_PRIORITY": "NORMAL"
-      },
-      "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL",
-      "pass_rate": "2/2",
-      "avg_ms": 4171.8,
-      "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding"
     }
   ]
 }
