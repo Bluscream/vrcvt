@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-19 22:55:47",
-  "suite_runtime_seconds": 41.95,
+  "generated_at": "2026-08-19 22:59:55",
+  "suite_runtime_seconds": 40.89,
   "rankings": [
     {
       "rank": 1,
@@ -14,7 +14,7 @@
       },
       "env_str": "WINEDLLOVERRIDES=iyuv_32= G_TLS_GNUTLS_PRIORITY=NORMAL PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn",
       "pass_rate": "6/6",
-      "avg_ms": 4197.3,
+      "avg_ms": 4084.2,
       "launch_cmd": "WINEDLLOVERRIDES=\"iyuv_32=\" G_TLS_GNUTLS_PRIORITY=NORMAL PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 PRESSURE_VESSEL_FILESYSTEMS_RW=/var/lib/flatpak/app/io.github.wivrn.wivrn %command% --enable-hw-video-decoding --enable-avpro-in-proton"
     }
   ]

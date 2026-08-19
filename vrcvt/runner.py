@@ -140,6 +140,12 @@ class VRCTestRunner:
         env.update(self.env_vars)
         env["WINEDLLOVERRIDES"] = override_base
 
+        if "G_TLS_GNUTLS_PRIORITY" not in env:
+            env["G_TLS_GNUTLS_PRIORITY"] = "NORMAL"
+
+        env["SSL_CERT_DIR"] = "/etc/ssl/certs"
+        env["SSL_CERT_FILE"] = "/etc/ssl/certs/ca-certificates.crt"
+
         c_wmf = sandbox_prefix / "pfx/drive_c/vrcvt_wmf_test.exe"
         c_stream = sandbox_prefix / "pfx/drive_c/vrcvt_stream.mp4"
         c_result_json = sandbox_prefix / "pfx/drive_c/vrcvt_result.json"
