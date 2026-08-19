@@ -3,47 +3,73 @@
 [![GitHub Release](https://img.shields.io/github/v/release/Bluscream/vrcvt?style=flat-square)](https://github.com/Bluscream/vrcvt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-**`vrcvt` (VRCVideoTester)** is an out-of-the-box, comprehensive diagnostic tool and benchmark suite for testing **VRChat video player compatibility on Linux (Proton)**.
+**`vrcvt` (VRCVideoTester)** is a comprehensive, out-of-the-box diagnostic tool and compatibility benchmark suite for **VRChat video player playback on Linux (Proton)**.
 
-It measures, tests, and diagnoses video playback across installed Proton compatibility tools, environment variables, launch flags, and stream types without requiring you to launch VRChat or join game worlds manually.
+It automatically measures, tests, and ranks video playback compatibility across all installed Proton tools, launch parameters, environment flags, and video stream types without requiring you to launch VRChat or join game worlds manually.
 
 ---
 
 ## Key Features
 
-- **Multi-Stream Testing**:
+- **Exhaustive Multi-Stream Diagnostic Matrix**:
   - Bundled local 720p H.264 + AAC MP4 asset (`assets/sample.mp4`)
-  - YouTube Video streams
-  - YouTube Music / Audio streams
-  - Real-Time Streaming Protocol (VRCDN `rtspt://`)
+  - YouTube Video streams (`https://www.youtube.com/...`)
+  - YouTube Music / Audio streams (`https://music.youtube.com/...`)
+  - Real-Time Streaming Protocol (VRCDN `rtspt://...`)
   - HTTP Live Streaming (`.m3u8` HLS)
   - Direct HTTPS MP4 streams
-- **VRChat Mimicry**:
-  - Passes VRChat's exact `yt-dlp` headers (`User-Agent`, `--no-check-certificates`, format selectors).
+- **Automatic H.264 Payload Unlock**:
+  - Verifies presence of Steam's H.264 codec payload (`mfh264enc.dll`) and auto-triggers `steam://unlockh264/` if missing.
+- **Dynamic Configuration Ranking Engine**:
+  - Automatically evaluates all `(Proton, Env)` permutations and ranks them from **#1 BEST** to worst based on Pass Rate and Average Execution Time (fastest first).
+- **Desktop Mode Try Mode (`--try`)**:
+  - Benchmark matrix runs dynamically rank the best setup and can automatically trigger VRChat launch in **1024x768 (4:3) Desktop Debug Mode** directly into test world `wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1`.
+- **Instant Launch Option (`--no-tests`)**:
+  - Bypass the benchmark testing phase and directly trigger the `--try` VRChat desktop mode launch instantly.
+- **Detailed Suite Timing & Bottleneck Analysis**:
+  - High-precision split timing for `yt-dlp` stream pre-resolution vs MediaFoundation C++ decoder execution (`WMF`) and container overhead.
+- **Isolated Sandbox Prefix**:
+  - Executes test harness inside `/tmp/vrcvt_sandbox_prefix` so Proton tool switches **never** touch or modify your real VRChat prefix data or Windows registry.
+- **VRChat Native Mimicry**:
+  - Passes VRChat's exact `yt-dlp` headers (`User-Agent: VRChat/2024.3.2`, format selectors).
   - Invokes Windows Media Foundation (`IMFSourceResolver`, `IMFSourceReader`) directly via C++ harness (`wmf_test.exe`).
-- **Timing & Retry Metrics**:
-  - High-precision execution timings (in milliseconds) for `yt-dlp` resolution, WMF startup, and stream creation.
-- **DNS & SSL Error Diagnostics & Solution Generator**:
-  - Detects missing shared libraries (`libbz2.so.1.0`, `libavcodec.so.58`), GnuTLS TLS errors (`%COMPAT`), DNS resolution failures (`0x80072EE7`), and SSL certificate errors (`0x80072F8F`), automatically recommending actionable fixes.
 
 ---
 
-## Quick Start
+## Usage
 
 ```bash
 # Clone repository
 git clone https://github.com/Bluscream/vrcvt.git
 cd vrcvt
 
-# Run quick diagnostic matrix
-./vrcvt --quick
+# Run full diagnostic benchmark matrix across all installed Proton versions
+./vrcvt
 
-# Run full comprehensive matrix across all installed Proton versions
-./vrcvt --all
+# Run benchmark matrix AND launch VRChat in 4:3 Desktop Debug Mode into test world
+./vrcvt --try
 
-# Test a custom video or stream URL
+# Skip benchmark tests and launch VRChat directly in Desktop Debug Mode
+./vrcvt --no-tests
+
+# Test a specific custom video or stream URL
 ./vrcvt --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+# Output raw JSON results for automated tools
+./vrcvt --json
 ```
+
+---
+
+## CLI Options
+
+| Argument | Description |
+| :--- | :--- |
+| *(default)* | Run mandatory diagnostic matrix across all installed Proton tools and test streams |
+| `--try` | Launch VRChat in 1024x768 (4:3) Desktop Debug mode into test world (`wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1`) using the #1 ranked benchmark configuration |
+| `--no-tests` | Skip the benchmark testing phase and trigger direct `--try` VRChat desktop launch immediately |
+| `--url <URL>` | Benchmark a specific custom stream or video URL |
+| `--json` | Output results in raw JSON format |
 
 ---
 
@@ -53,16 +79,6 @@ cd vrcvt
 
 ```bash
 x86_64-w64-mingw32-g++ src/wmf_test.cpp -o assets/wmf_test.exe -lmfplat -lmfreadwrite -lmfuuid -lole32
-```
-
----
-
-## Recommended Launch Options for VRChat on Linux
-
-Based on empirical testing on Bazzite / Arch / Fedora:
-
-```bash
-WINEDLLOVERRIDES="iyuv_32=" G_TLS_GNUTLS_PRIORITY=NORMAL %command% --enable-avpro-in-proton --disable-hw-video-decoding
 ```
 
 ---
