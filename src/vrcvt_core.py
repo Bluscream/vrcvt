@@ -447,7 +447,11 @@ def run_matrix_test(custom_url=None, try_launch=False):
 
     # Dynamic Ranking of Combinations (Best to Worst by Pass Count & Timing)
     combo_stats = defaultdict(lambda: {"pass_count": 0, "total_tests": 0, "total_ms": 0.0, "env_vars": {}, "env_label": "", "proton_name": ""})
+    tool_timing = defaultdict(lambda: {"total_wmf_ms": 0.0, "total_ytdlp_ms": 0.0, "count": 0, "elapsed_sec": 0.0})
     
+    total_ytdlp_ms_all = 0.0
+    total_wmf_ms_all = 0.0
+
     for r in results:
         key = (r["proton_name"], r["env_label"])
         combo = combo_stats[key]
@@ -458,6 +462,36 @@ def run_matrix_test(custom_url=None, try_launch=False):
         combo["total_ms"] += r["elapsed_ms"]
         if r["success"]:
             combo["pass_count"] += 1
+
+        tt = tool_timing[r["proton_name"]]
+        tt["total_wmf_ms"] += r["wmf_ms"]
+        tt["total_ytdlp_ms"] += r["ytdlp_ms"]
+        tt["count"] += 1
+
+        total_ytdlp_ms_all += r["ytdlp_ms"]
+        total_wmf_ms_all += r["wmf_ms"]
+
+    # Print Detailed Timing & Bottleneck Analysis
+    total_ytdlp_sec = total_ytdlp_ms_all / 1000.0
+    total_wmf_sec = total_wmf_ms_all / 1000.0
+    container_overhead_sec = max(0.0, suite_elapsed_sec - (total_ytdlp_sec + total_wmf_sec))
+
+    print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN} DETAILED SUITE TIMING & BOTTLENECK ANALYSIS{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================================================{COLOR_RESET}")
+    print(f" Total Benchmark Suite Runtime : {COLOR_BOLD}{mins}m {secs:.1f}s ({suite_elapsed_sec:.1f}s total){COLOR_RESET}")
+    print(f" Total Sub-Tests Executed      : {len(results)} sub-tests")
+    print(f" Total yt-dlp Resolution Time  : {total_ytdlp_sec:.1f}s ({total_ytdlp_sec/suite_elapsed_sec*100:.1f}% of total runtime)")
+    print(f" Total WMF Harness Execution   : {total_wmf_sec:.1f}s ({total_wmf_sec/suite_elapsed_sec*100:.1f}% of total runtime)")
+    print(f" Container & Process Overhead  : {container_overhead_sec:.1f}s ({container_overhead_sec/suite_elapsed_sec*100:.1f}% of total runtime)")
+    print(f" Average Sub-Test Latency      : {(suite_elapsed_sec/max(len(results),1))*1000:.0f}ms / sub-test")
+    print()
+    print(f" {COLOR_BOLD}PER-TOOL RUNTIME BREAKDOWN:{COLOR_RESET}")
+    for p_name, t_info in tool_timing.items():
+        avg_wmf = t_info["total_wmf_ms"] / max(t_info["count"], 1)
+        avg_ytdlp = t_info["total_ytdlp_ms"] / max(t_info["count"], 1)
+        print(f"   • {p_name:<26} : Avg WMF Decode = {avg_wmf:.0f}ms | Avg yt-dlp = {avg_ytdlp:.0f}ms")
+    print()
 
     ranked_combos = []
     for (p_name, e_label), stats in combo_stats.items():
