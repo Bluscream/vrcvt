@@ -60,8 +60,10 @@ VRCHAT_DEBUG_ARGS = [
 DEFAULT_TEST_WORLD_ID = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1"
 
 def find_proton_tools():
-    """Discover installed Proton versions on the system."""
-    proton_dirs = set()
+    """Discover installed Proton versions on the system, deduplicating symlinked paths."""
+    seen_realpaths = set()
+    proton_list = []
+    
     search_paths = [
         os.path.expanduser("~/.local/share/Steam/compatibilitytools.d/*"),
         os.path.expanduser("~/.steam/steam/compatibilitytools.d/*"),
@@ -72,12 +74,17 @@ def find_proton_tools():
     
     for path_glob in search_paths:
         for entry in glob.glob(path_glob):
-            proton_bin = os.path.join(entry, "proton")
-            if os.path.isfile(proton_bin) and os.access(proton_bin, os.X_OK):
-                tool_name = os.path.basename(entry)
-                proton_dirs.add((tool_name, entry, proton_bin))
+            real_entry = os.path.realpath(entry)
+            if real_entry in seen_realpaths:
+                continue
                 
-    return sorted(list(proton_dirs), key=lambda x: x[0])
+            proton_bin = os.path.join(real_entry, "proton")
+            if os.path.isfile(proton_bin) and os.access(proton_bin, os.X_OK):
+                tool_name = os.path.basename(real_entry)
+                seen_realpaths.add(real_entry)
+                proton_list.append((tool_name, real_entry, proton_bin))
+                
+    return sorted(proton_list, key=lambda x: x[0])
 
 def check_and_unlock_h264():
     """Verify if Steam's H.264 codec payload (mfh264enc.dll) is unlocked, and auto-trigger unlock if missing."""
