@@ -226,7 +226,7 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
         start_t = time.time()
         try:
             cmd = [proton_bin, "run", c_wmf, url, "--json"]
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=12, env=env)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=4, env=env)
             elapsed_ms = (time.time() - start_t) * 1000.0
             
             stdout = res.stdout
