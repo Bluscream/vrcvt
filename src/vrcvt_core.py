@@ -55,9 +55,8 @@ VRCHAT_DEBUG_ARGS = [
     "--disable-hw-video-decoding"
 ]
 
-# Default Video Test World (Eurofurence EF30)
+# Default Video Test World ID (Eurofurence EF30)
 DEFAULT_TEST_WORLD_ID = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1"
-DEFAULT_TEST_WORLD_LOCATION = "wrld_a2fd9533-5c69-400b-a34e-ae0c11df99e1:19431~group(grp_3b67b24d-6ae2-484b-a0b6-c26255232370)~groupAccessType(public)~region(eu)"
 
 def find_proton_tools(filter_name=None):
     """Discover installed Proton versions on the system."""
@@ -299,16 +298,16 @@ def run_wmf_test(proton_bin, prefix_dir, wmf_exe, url, env_vars, retries=1):
                 "attempts": attempt
             }
 
-def launch_vrchat_in_desktop_test_mode(world_location=None):
-    """Launch VRChat in desktop mode with full debug/logging command line flags and join video test world."""
-    target_instance = world_location or DEFAULT_TEST_WORLD_LOCATION
-    vrc_launch_uri = f"vrchat://launch?id={target_instance}"
+def launch_vrchat_in_desktop_test_mode(world_id=None):
+    """Launch VRChat in desktop mode with full debug/logging command line flags and watch video test world."""
+    target_world_id = world_id or DEFAULT_TEST_WORLD_ID
+    vrc_launch_uri = f"vrchat://launch?id={target_world_id}"
     steam_rungame_uri = f"steam://rungameid/438100//{vrc_launch_uri}"
 
     print(f"\n{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN} [--try Mode] Launching VRChat in Desktop Mode for Debug Log Scraping{COLOR_RESET}")
     print(f"{COLOR_BOLD}{COLOR_CYAN}========================================================================{COLOR_RESET}")
-    print(f" Target Instance : {target_instance}")
+    print(f" Target World ID : {target_world_id}")
     print(f" Debug Args      : {' '.join(VRCHAT_DEBUG_ARGS)}")
     print()
 
