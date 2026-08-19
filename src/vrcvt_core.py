@@ -560,10 +560,14 @@ def main():
     parser = argparse.ArgumentParser(description="VRCVideoTester (vrcvt) - Dynamic VRChat Video Player Compatibility Benchmark")
     parser.add_argument("--url", type=str, help="Test a specific video or stream URL")
     parser.add_argument("--try", dest="try_launch", action="store_true", help="Launch VRChat in Desktop mode using the #1 best benchmark configuration into video test world")
+    parser.add_argument("--no-tests", dest="no_tests", action="store_true", help="Skip benchmark testing phase and launch VRChat directly")
     parser.add_argument("--json", action="store_true", help="Output raw JSON results for automated tools")
     args = parser.parse_args()
 
-    run_matrix_test(custom_url=args.url, try_launch=args.try_launch)
+    if args.no_tests:
+        launch_vrchat_in_desktop_test_mode()
+    else:
+        run_matrix_test(custom_url=args.url, try_launch=args.try_launch)
 
 if __name__ == "__main__":
     main()
