@@ -9,6 +9,16 @@ It automatically measures, tests, and ranks video playback compatibility across 
 
 ---
 
+## Quick VRChat Diagnostic Inspector (`check_vrc.sh`)
+
+Run the standalone diagnostic inspector directly in your terminal from GitHub to inspect active VRChat processes, Proton tool matches, blacklisted environment variables, and log video status:
+
+```bash
+bash <(curl -sSL https://raw.githubusercontent.com/Bluscream/vrcvt/main/bin/check_vrc.sh)
+```
+
+---
+
 ## Key Features
 
 - **Multi-Layered Compatibility Matrix**:
